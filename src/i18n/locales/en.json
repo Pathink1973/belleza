@@ -1,0 +1,76 @@
+{
+  "auth": {
+    "errors": {
+      "emailRequired": "Please enter a valid email address",
+      "emailExists": "This email is already registered",
+      "userCreationFailed": "Failed to create user account",
+      "noSession": "No active session found",
+      "generic": "An error occurred during authentication"
+    }
+  },
+  "services": {
+    "yourServices": "Your Services",
+    "availableServices": "Available Services",
+    "addService": "Add Service",
+    "searchPlaceholder": "Search services...",
+    "filters": "Filters",
+    "filtersTitle": {
+      "minPrice": "Min Price",
+      "maxPrice": "Max Price",
+      "duration": "Duration",
+      "anyDuration": "Any duration",
+      "minutes": "minutes",
+      "hour": "hour",
+      "hours": "hours",
+      "reset": "Clear filters"
+    },
+    "sort": {
+      "newest": "Newest",
+      "priceLowToHigh": "Price: Low to High",
+      "priceHighToLow": "Price: High to Low",
+      "highestRated": "Highest Rated"
+    }
+  },
+  "bookings": {
+    "title": "Your Bookings",
+    "noBookings": {
+      "title": "No bookings found",
+      "client": "Search for services to make your first booking!",
+      "professional": "Wait for clients to book your services."
+    },
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "actions": {
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "complete": "Complete"
+    },
+    "success": {
+      "statusUpdate": "Booking status updated successfully"
+    },
+    "error": {
+      "fetchBookings": "Error loading bookings",
+      "updateStatus": "Error updating booking status"
+    }
+  },
+  "clients": {
+    "errors": {
+      "profileCreationFailed": "Failed to create client profile",
+      "generic": "An error occurred while adding the client",
+      "fetch": "Failed to load client list"
+    },
+    "success": {
+      "clientAdded": "Client added successfully!"
+    }
+  },
+  "roles": {
+    "client": "Client",
+    "professional": "Professional",
+    "admin": "Admin",
+    "super_admin": "Super Admin"
+  }
+}

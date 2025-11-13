@@ -1,0 +1,198 @@
+{
+  "common": {
+    "loading": "A carregar...",
+    "error": "Ocorreu um erro",
+    "success": "Operação bem-sucedida",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "saving": "A guardar...",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "search": "Pesquisar",
+    "currency": "€"
+  },
+  "auth": {
+    "welcomeBack": "Bem-vindo de Volta",
+    "noAccount": "Não tem uma conta?",
+    "signUp": "Registar",
+    "signIn": "Entrar",
+    "signingIn": "A entrar...",
+    "email": "Endereço de email",
+    "password": "Palavra-passe",
+    "role": "Função",
+    "client": "Cliente",
+    "professional": "Profissional",
+    "admin": "Administrador",
+    "super_admin": "Super Administrador",
+    "createAccount": "Criar conta",
+    "creatingAccount": "A criar conta...",
+    "confirmationSent": "Por favor, verifique seu email para confirmar a conta.",
+    "signOut": "Terminar sessão",
+    "errors": {
+      "emailRequired": "Email é obrigatório",
+      "passwordRequired": "Palavra-passe é obrigatória",
+      "passwordLength": "A palavra-passe deve ter pelo menos 6 caracteres",
+      "invalidCredentials": "Email ou palavra-passe inválidos",
+      "emailNotConfirmed": "Por favor, confirme seu email antes de entrar",
+      "confirmationExpired": "O link de confirmação expirou",
+      "resendFailed": "Falha ao reenviar email de confirmação",
+      "generic": "Ocorreu um erro durante o login",
+      "emailExists": "Este email já está registrado",
+      "userCreationFailed": "Falha ao criar conta de usuário",
+      "noSession": "Nenhuma sessão ativa encontrada"
+    },
+    "resendConfirmation": "Reenviar email de confirmação",
+    "resending": "A reenviar..."
+  },
+  "navigation": {
+    "home": "Início",
+    "dashboard": "Painel",
+    "services": "Serviços",
+    "bookings": "Marcações",
+    "clients": "Clientes",
+    "analytics": "Análises",
+    "settings": "Definições"
+  },
+  "dashboard": {
+    "welcome": "Bem-vindo ao seu Painel",
+    "manageServices": "Gerir os seus serviços e marcações",
+    "viewBookings": "Ver as suas marcações",
+    "analytics": "Ver análises detalhadas",
+    "professional": {
+      "title": "Painel Profissional",
+      "addService": "Adicionar Novo Serviço",
+      "stats": {
+        "totalBookings": "Total de Marcações",
+        "totalClients": "Total de Clientes",
+        "totalRevenue": "Receita Total",
+        "averageRating": "Avaliação Média"
+      },
+      "charts": {
+        "bookingsOverview": "Visão Geral das Marcações",
+        "revenueTrend": "Tendência de Receita"
+      },
+      "recentBookings": {
+        "title": "Marcações Recentes",
+        "columns": {
+          "client": "Cliente",
+          "service": "Serviço",
+          "date": "Data",
+          "status": "Estado",
+          "amount": "Valor"
+        },
+        "empty": "Sem marcações recentes"
+      }
+    },
+    "client": {
+      "title": "Encontre o Serviço Perfeito",
+      "subtitle": "Marque serviços de beleza com profissionais de topo",
+      "search": {
+        "placeholder": "Pesquisar serviços ou profissionais..."
+      },
+      "featured": {
+        "title": "Serviços em Destaque",
+        "viewAll": "Ver Todos"
+      }
+    }
+  },
+  "services": {
+    "yourServices": "Seus Serviços",
+    "availableServices": "Serviços Disponíveis",
+    "addService": "Adicionar Serviço",
+    "searchPlaceholder": "Procurar serviços...",
+    "filters": "Filtros",
+    "filtersTitle": {
+      "minPrice": "Preço Mínimo",
+      "maxPrice": "Preço Máximo",
+      "duration": "Duração",
+      "anyDuration": "Qualquer duração",
+      "minutes": "minutos",
+      "hour": "hora",
+      "hours": "horas",
+      "reset": "Limpar filtros"
+    },
+    "sort": {
+      "newest": "Mais Recentes",
+      "priceLowToHigh": "Preço: Menor para Maior",
+      "priceHighToLow": "Preço: Maior para Menor",
+      "highestRated": "Melhor Avaliados"
+    },
+    "noServicesCreated": "Você ainda não criou nenhum serviço.",
+    "noServicesAvailable": "Nenhum serviço disponível no momento.",
+    "details": {
+      "professional": "Profissional",
+      "description": "Descrição",
+      "actions": {
+        "edit": "Editar",
+        "delete": "Excluir",
+        "book": "Agendar Agora",
+        "deleteConfirm": "Tem certeza que deseja excluir este serviço?",
+        "bookViaWhatsApp": "Agendar via WhatsApp"
+      },
+      "errors": {
+        "notFound": "Serviço não encontrado",
+        "loadError": "Erro ao carregar serviço",
+        "deleteError": "Erro ao excluir serviço"
+      }
+    }
+  },
+  "bookings": {
+    "title": "Suas Marcações",
+    "noBookings": {
+      "title": "Nenhuma marcação encontrada",
+      "client": "Procure serviços para fazer sua primeira marcação!",
+      "professional": "Aguarde os clientes marcarem seus serviços."
+    },
+    "status": {
+      "pendente": "Pendente",
+      "confirmado": "Confirmado",
+      "concluído": "Concluído",
+      "cancelado": "Cancelado"
+    },
+    "actions": {
+      "confirm": "Confirmar",
+      "cancel": "Cancelar",
+      "complete": "Concluir"
+    },
+    "success": {
+      "statusUpdate": "Estado da marcação atualizado com sucesso"
+    },
+    "error": {
+      "fetchBookings": "Erro ao carregar marcações",
+      "updateStatus": "Erro ao atualizar estado da marcação"
+    }
+  },
+  "clients": {
+    "title": "Lista de Clientes",
+    "search": "Procurar clientes...",
+    "sort": {
+      "recent": "Mais Recentes",
+      "bookings": "Mais Marcações",
+      "spent": "Maior Gasto"
+    },
+    "stats": {
+      "lastVisit": "Última Visita",
+      "totalBookings": "Total de Marcações",
+      "totalSpent": "Total Gasto"
+    },
+    "noClients": {
+      "title": "Nenhum cliente encontrado",
+      "message": "Sua lista de clientes aparecerá aqui",
+      "searchMessage": "Tente ajustar sua busca"
+    },
+    "errors": {
+      "profileCreationFailed": "Falha ao criar perfil do cliente",
+      "generic": "Ocorreu um erro ao adicionar o cliente",
+      "fetch": "Falha ao carregar lista de clientes"
+    },
+    "success": {
+      "clientAdded": "Cliente adicionado com sucesso!"
+    }
+  },
+  "roles": {
+    "client": "Cliente",
+    "professional": "Profissional",
+    "admin": "Administrador",
+    "super_admin": "Super Administrador"
+  }
+}

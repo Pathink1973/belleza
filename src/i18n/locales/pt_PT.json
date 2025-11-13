@@ -1,0 +1,509 @@
+{
+  "common": {
+    "loading": "A carregar...",
+    "error": "Ocorreu um erro",
+    "success": "Operação bem-sucedida",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "saving": "A guardar...",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "search": "Pesquisar",
+    "currency": "€",
+    "yes": "Sim",
+    "no": "Não",
+    "close": "Fechar",
+    "confirm": "Confirmar",
+    "back": "Voltar",
+    "next": "Seguinte",
+    "finish": "Concluir",
+    "optional": "Opcional",
+    "required": "Obrigatório"
+  },
+  "auth": {
+    "welcomeBack": "Bem-vindo de Volta",
+    "noAccount": "Não tem uma conta?",
+    "hasAccount": "Já tem uma conta?",
+    "signUp": "Registar",
+    "signIn": "Entrar",
+    "signingIn": "A entrar...",
+    "email": "E-mail",
+    "emailAddress": "Endereço de e-mail",
+    "password": "Palavra-passe",
+    "confirmPassword": "Confirmar palavra-passe",
+    "fullName": "Nome Completo",
+    "phone": "Telemóvel",
+    "role": "Função",
+    "client": "Cliente",
+    "professional": "Profissional",
+    "admin": "Administrador",
+    "super_admin": "Super Administrador",
+    "createAccount": "Criar conta",
+    "createProfessionalAccount": "Criar Conta de Profissional",
+    "createClientAccount": "Criar Conta de Cliente",
+    "creatingAccount": "A criar conta...",
+    "confirmationSent": "Por favor, verifique o seu e-mail para confirmar a conta.",
+    "signOut": "Terminar sessão",
+    "forgotPassword": "Esqueceu-se da palavra-passe?",
+    "resetPassword": "Redefinir palavra-passe",
+    "accountType": "Tipo de conta",
+    "selectAccountType": "Selecione o tipo de conta",
+    "backToServices": "Voltar aos Serviços",
+    "errors": {
+      "emailRequired": "O e-mail é obrigatório",
+      "passwordRequired": "A palavra-passe é obrigatória",
+      "passwordLength": "A palavra-passe deve ter pelo menos 6 caracteres",
+      "passwordMismatch": "As palavras-passe não coincidem",
+      "invalidCredentials": "E-mail ou palavra-passe inválidos",
+      "emailNotConfirmed": "Por favor, confirme o seu e-mail antes de entrar",
+      "confirmationExpired": "A ligação de confirmação expirou",
+      "resendFailed": "Falha ao reenviar e-mail de confirmação",
+      "generic": "Ocorreu um erro durante a autenticação",
+      "emailExists": "Este e-mail já está registado",
+      "userCreationFailed": "Falha ao criar conta de utilizador",
+      "noSession": "Nenhuma sessão ativa encontrada"
+    },
+    "resendConfirmation": "Reenviar e-mail de confirmação",
+    "resending": "A reenviar..."
+  },
+  "navigation": {
+    "home": "Início",
+    "dashboard": "Painel",
+    "services": "Serviços",
+    "bookings": "Marcações",
+    "clients": "Clientes",
+    "analytics": "Análises",
+    "settings": "Definições",
+    "profile": "Perfil",
+    "about": "Sobre",
+    "contact": "Contacto",
+    "help": "Ajuda",
+    "features": "Funcionalidades",
+    "calendar": "Calendário",
+    "availability": "Disponibilidade",
+    "blockedDates": "Datas Bloqueadas",
+    "notifications": "Notificações",
+    "reviews": "Avaliações"
+  },
+  "dashboard": {
+    "welcome": "Bem-vindo ao seu Painel",
+    "manageServices": "Gerir os seus serviços e marcações",
+    "viewBookings": "Ver as suas marcações",
+    "analytics": "Ver análises detalhadas",
+    "professional": {
+      "title": "Painel Profissional",
+      "addService": "Adicionar Novo Serviço",
+      "addClient": "Adicionar Cliente",
+      "newBooking": "Nova Marcação",
+      "stats": {
+        "totalBookings": "Total de Marcações",
+        "totalClients": "Total de Clientes",
+        "totalRevenue": "Receita Total",
+        "averageRating": "Avaliação Média",
+        "pendingBookings": "Marcações Pendentes",
+        "todayBookings": "Marcações Hoje"
+      },
+      "charts": {
+        "bookingsOverview": "Visão Geral das Marcações",
+        "revenueTrend": "Tendência de Receita",
+        "monthlyRevenue": "Receita Mensal",
+        "bookingsByStatus": "Marcações por Estado"
+      },
+      "recentBookings": {
+        "title": "Marcações Recentes",
+        "columns": {
+          "client": "Cliente",
+          "service": "Serviço",
+          "date": "Data",
+          "time": "Hora",
+          "status": "Estado",
+          "amount": "Valor"
+        },
+        "empty": "Sem marcações recentes",
+        "viewAll": "Ver Todas"
+      }
+    },
+    "client": {
+      "title": "Encontre o Serviço Perfeito",
+      "subtitle": "Marque serviços de beleza com profissionais de topo",
+      "search": {
+        "placeholder": "Pesquisar serviços ou profissionais...",
+        "location": "Localização..."
+      },
+      "featured": {
+        "title": "Serviços em Destaque",
+        "viewAll": "Ver Todos"
+      },
+      "categories": {
+        "title": "Categorias",
+        "all": "Todas"
+      }
+    }
+  },
+  "services": {
+    "title": "Serviços",
+    "yourServices": "Os Seus Serviços",
+    "availableServices": "Serviços Disponíveis",
+    "addService": "Adicionar Serviço",
+    "editService": "Editar Serviço",
+    "deleteService": "Eliminar Serviço",
+    "manageService": "Gerir Serviço",
+    "searchPlaceholder": "Procurar serviços...",
+    "locationPlaceholder": "Localização...",
+    "filters": "Filtros",
+    "showFilters": "Mostrar Filtros",
+    "hideFilters": "Ocultar Filtros",
+    "resultsFound": "Encontrados",
+    "resultsText": "serviços",
+    "for": "para",
+    "in": "em",
+    "filtersTitle": {
+      "minPrice": "Preço Mínimo",
+      "maxPrice": "Preço Máximo",
+      "duration": "Duração",
+      "anyDuration": "Qualquer duração",
+      "minutes": "minutos",
+      "hour": "hora",
+      "hours": "horas",
+      "minRating": "Avaliação Mínima",
+      "anyRating": "Qualquer avaliação",
+      "stars": "estrelas",
+      "reset": "Limpar filtros"
+    },
+    "sort": {
+      "label": "Ordenar por",
+      "relevance": "Mais Relevante",
+      "newest": "Mais Recentes",
+      "priceLowToHigh": "Preço: Menor para Maior",
+      "priceHighToLow": "Preço: Maior para Menor",
+      "highestRated": "Melhor Avaliados"
+    },
+    "noServicesCreated": "Ainda não criou nenhum serviço.",
+    "noServicesAvailable": "Nenhum serviço disponível no momento.",
+    "noServicesFound": "Nenhum serviço encontrado.",
+    "tryAdjustingFilters": "Tente ajustar os seus filtros.",
+    "details": {
+      "title": "Detalhes do Serviço",
+      "professional": "Profissional",
+      "establishment": "Estabelecimento",
+      "description": "Descrição",
+      "priceOptions": "Opções de Preço",
+      "startingFrom": "A partir de",
+      "options": "opções",
+      "team": "Equipa",
+      "location": "Localização",
+      "phone": "Telefone",
+      "category": "Categoria",
+      "actions": {
+        "edit": "Editar",
+        "editFull": "Editar Serviço Completo",
+        "delete": "Eliminar",
+        "book": "Agendar",
+        "bookViaWhatsApp": "Marcar via WhatsApp",
+        "contactViaWhatsApp": "Contactar via WhatsApp",
+        "deleteConfirm": "Tem a certeza que deseja eliminar este serviço?",
+        "deleteWarning": "Esta ação não pode ser revertida.",
+        "confirmDelete": "Confirmar Eliminação",
+        "manage": "Gerir",
+        "chooseAction": "Escolha uma ação para este serviço:",
+        "viewAllServices": "Ver todos os serviços"
+      },
+      "errors": {
+        "notFound": "Serviço não encontrado",
+        "loadError": "Erro ao carregar serviço",
+        "deleteError": "Erro ao eliminar serviço"
+      },
+      "success": {
+        "deleted": "Serviço eliminado com sucesso"
+      }
+    },
+    "form": {
+      "title": "Título do Serviço",
+      "description": "Descrição",
+      "category": "Categoria",
+      "price": "Preço",
+      "duration": "Duração",
+      "images": "Imagens",
+      "whatsappNumber": "Número WhatsApp",
+      "selectCategory": "Selecionar categoria",
+      "uploadImages": "Carregar imagens",
+      "dragDrop": "Arraste e solte imagens aqui ou clique para selecionar",
+      "team": "Membros da Equipa"
+    }
+  },
+  "bookings": {
+    "title": "As Suas Marcações",
+    "newBooking": "Nova Marcação",
+    "bookingDetails": "Detalhes da Marcação",
+    "selectService": "Selecionar Serviço",
+    "selectDate": "Selecionar Data",
+    "selectTime": "Selecionar Hora",
+    "noBookings": {
+      "title": "Nenhuma marcação encontrada",
+      "client": "Procure serviços para fazer a sua primeira marcação!",
+      "professional": "Aguarde que os clientes marquem os seus serviços."
+    },
+    "status": {
+      "all": "Todas",
+      "pending": "Pendente",
+      "confirmed": "Confirmado",
+      "completed": "Concluído",
+      "cancelled": "Cancelado"
+    },
+    "actions": {
+      "confirm": "Confirmar",
+      "cancel": "Cancelar",
+      "complete": "Concluir",
+      "view": "Ver",
+      "edit": "Editar",
+      "delete": "Eliminar"
+    },
+    "success": {
+      "statusUpdate": "Estado da marcação atualizado com sucesso",
+      "created": "Marcação criada com sucesso",
+      "cancelled": "Marcação cancelada com sucesso",
+      "confirmed": "Marcação confirmada com sucesso",
+      "completed": "Marcação concluída com sucesso"
+    },
+    "error": {
+      "fetchBookings": "Erro ao carregar marcações",
+      "updateStatus": "Erro ao atualizar estado da marcação",
+      "createBooking": "Erro ao criar marcação",
+      "noTimeSlots": "Não há horários disponíveis"
+    },
+    "info": {
+      "client": "Cliente",
+      "service": "Serviço",
+      "date": "Data",
+      "time": "Hora",
+      "duration": "Duração",
+      "price": "Preço",
+      "status": "Estado",
+      "notes": "Notas",
+      "createdAt": "Criado em"
+    },
+    "filter": {
+      "all": "Todas as marcações",
+      "upcoming": "Próximas",
+      "past": "Anteriores",
+      "today": "Hoje"
+    }
+  },
+  "clients": {
+    "title": "Lista de Clientes",
+    "addClient": "Adicionar Cliente",
+    "search": "Procurar clientes...",
+    "sort": {
+      "label": "Ordenar por",
+      "recent": "Mais Recentes",
+      "bookings": "Mais Marcações",
+      "spent": "Maior Gasto",
+      "name": "Nome"
+    },
+    "stats": {
+      "lastVisit": "Última Visita",
+      "totalBookings": "Total de Marcações",
+      "totalSpent": "Total Gasto",
+      "averageSpent": "Média Gasta"
+    },
+    "noClients": {
+      "title": "Nenhum cliente encontrado",
+      "message": "A sua lista de clientes aparecerá aqui",
+      "searchMessage": "Tente ajustar a sua pesquisa"
+    },
+    "errors": {
+      "profileCreationFailed": "Falha ao criar perfil do cliente",
+      "generic": "Ocorreu um erro ao adicionar o cliente",
+      "fetch": "Falha ao carregar lista de clientes"
+    },
+    "success": {
+      "clientAdded": "Cliente adicionado com sucesso!",
+      "clientUpdated": "Cliente atualizado com sucesso!"
+    },
+    "form": {
+      "name": "Nome Completo",
+      "email": "E-mail",
+      "phone": "Telefone",
+      "notes": "Notas"
+    }
+  },
+  "profile": {
+    "title": "Perfil",
+    "myProfile": "O Meu Perfil",
+    "editProfile": "Editar Perfil",
+    "personalInfo": "Informação Pessoal",
+    "businessInfo": "Informação do Negócio",
+    "accountSettings": "Definições da Conta",
+    "form": {
+      "fullName": "Nome Completo",
+      "email": "E-mail",
+      "phone": "Telefone",
+      "avatar": "Foto de Perfil",
+      "businessName": "Nome do Negócio",
+      "businessDescription": "Descrição do Negócio",
+      "businessAddress": "Morada do Negócio",
+      "businessPhone": "Telefone do Negócio",
+      "whatsappNumber": "Número WhatsApp",
+      "uploadAvatar": "Carregar Foto",
+      "changeAvatar": "Alterar Foto"
+    },
+    "success": {
+      "updated": "Perfil atualizado com sucesso"
+    },
+    "errors": {
+      "updateFailed": "Falha ao atualizar perfil",
+      "uploadFailed": "Falha ao carregar imagem"
+    }
+  },
+  "calendar": {
+    "title": "Calendário",
+    "today": "Hoje",
+    "month": "Mês",
+    "week": "Semana",
+    "day": "Dia",
+    "noEvents": "Sem eventos",
+    "availability": "Disponibilidade",
+    "blockedDates": "Datas Bloqueadas"
+  },
+  "availability": {
+    "title": "Disponibilidade",
+    "setAvailability": "Definir Disponibilidade",
+    "workingHours": "Horário de Trabalho",
+    "daysOfWeek": {
+      "monday": "Segunda-feira",
+      "tuesday": "Terça-feira",
+      "wednesday": "Quarta-feira",
+      "thursday": "Quinta-feira",
+      "friday": "Sexta-feira",
+      "saturday": "Sábado",
+      "sunday": "Domingo"
+    },
+    "from": "Das",
+    "to": "Às",
+    "closed": "Fechado",
+    "open": "Aberto",
+    "success": {
+      "updated": "Disponibilidade atualizada com sucesso"
+    },
+    "errors": {
+      "updateFailed": "Falha ao atualizar disponibilidade"
+    }
+  },
+  "blockedDates": {
+    "title": "Datas Bloqueadas",
+    "addBlockedDate": "Adicionar Data Bloqueada",
+    "selectDate": "Selecionar Data",
+    "reason": "Motivo",
+    "noDates": "Sem datas bloqueadas",
+    "success": {
+      "added": "Data bloqueada adicionada com sucesso",
+      "removed": "Data bloqueada removida com sucesso"
+    },
+    "errors": {
+      "addFailed": "Falha ao adicionar data bloqueada",
+      "removeFailed": "Falha ao remover data bloqueada"
+    }
+  },
+  "notifications": {
+    "title": "Notificações",
+    "markAsRead": "Marcar como lida",
+    "markAllAsRead": "Marcar todas como lidas",
+    "noNotifications": "Sem notificações",
+    "types": {
+      "booking": "Marcação",
+      "reminder": "Lembrete",
+      "cancellation": "Cancelamento",
+      "confirmation": "Confirmação",
+      "review": "Avaliação"
+    }
+  },
+  "reviews": {
+    "title": "Avaliações",
+    "writeReview": "Escrever Avaliação",
+    "rating": "Classificação",
+    "comment": "Comentário",
+    "noReviews": "Sem avaliações",
+    "success": {
+      "submitted": "Avaliação submetida com sucesso"
+    },
+    "errors": {
+      "submitFailed": "Falha ao submeter avaliação"
+    }
+  },
+  "categories": {
+    "all": "Todas as Categorias",
+    "hairSalon": "Cabeleireiro",
+    "barbershop": "Barbearia",
+    "nails": "Unhas",
+    "massage": "Massagens",
+    "spa": "Spa",
+    "makeup": "Maquilhagem",
+    "aesthetics": "Estética",
+    "tattoo": "Tatuagens",
+    "other": "Outros"
+  },
+  "landing": {
+    "hero": {
+      "title": "Encontre os Melhores Profissionais",
+      "subtitle": "Marque serviços de beleza e bem-estar com facilidade",
+      "cta": "Começar Agora"
+    },
+    "features": {
+      "title": "Funcionalidades",
+      "booking": {
+        "title": "Marcações Fáceis",
+        "description": "Marque os seus serviços favoritos em segundos"
+      },
+      "professionals": {
+        "title": "Profissionais Verificados",
+        "description": "Trabalhe com os melhores profissionais certificados"
+      },
+      "management": {
+        "title": "Gestão Simples",
+        "description": "Gerir as suas marcações e clientes facilmente"
+      }
+    }
+  },
+  "errors": {
+    "generic": "Ocorreu um erro",
+    "networkError": "Erro de conexão. Verifique a sua internet.",
+    "notFound": "Página não encontrada",
+    "unauthorized": "Não autorizado",
+    "forbidden": "Acesso negado",
+    "serverError": "Erro no servidor. Tente novamente mais tarde.",
+    "validationError": "Erro de validação",
+    "tryAgain": "Tente novamente"
+  },
+  "validation": {
+    "required": "Este campo é obrigatório",
+    "invalidEmail": "E-mail inválido",
+    "invalidPhone": "Telefone inválido",
+    "minLength": "Mínimo de {{min}} caracteres",
+    "maxLength": "Máximo de {{max}} caracteres",
+    "passwordMatch": "As palavras-passe devem coincidir"
+  },
+  "time": {
+    "morning": "Manhã",
+    "afternoon": "Tarde",
+    "evening": "Noite",
+    "minutes": "minutos",
+    "hour": "hora",
+    "hours": "horas",
+    "day": "dia",
+    "days": "dias",
+    "week": "semana",
+    "weeks": "semanas",
+    "month": "mês",
+    "months": "meses",
+    "year": "ano",
+    "years": "anos",
+    "ago": "atrás",
+    "justNow": "Agora mesmo"
+  },
+  "roles": {
+    "client": "Cliente",
+    "professional": "Profissional",
+    "admin": "Administrador",
+    "super_admin": "Super Administrador"
+  }
+}
