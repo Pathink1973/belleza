@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aplicar Migração - Múltiplas Imagens</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 900px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    button {
+      background: #9333ea;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    button:hover {
+      background: #7e22ce;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 6px;
+      display: none;
+    }
+    .success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #065f46;
+    }
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #991b1b;
+    }
+    .info {
+      background: #dbeafe;
+      color: #1e40af;
+      border: 1px solid #1e40af;
+      margin-bottom: 20px;
+    }
+    pre {
+      background: #f9fafb;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+    .step {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f9fafb;
+      border-left: 3px solid #9333ea;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🖼️ Migração: Suporte para Múltiplas Imagens</h1>
+
+    <div class="info">
+      <strong>ℹ️ O que esta migração faz:</strong>
+      <ul>
+        <li>✅ Adiciona coluna <code>images</code> (array de texto) à tabela services</li>
+        <li>✅ Migra dados existentes de <code>image_url</code> para <code>images</code></li>
+        <li>✅ Remove a coluna antiga <code>image_url</code></li>
+        <li>✅ Permite adicionar múltiplas imagens a cada serviço</li>
+      </ul>
+    </div>
+
+    <button id="applyBtn" onclick="applyMigration()">Aplicar Migração</button>
+    <button onclick="checkSchema()">Verificar Schema</button>
+
+    <div id="result" class="result"></div>
+  </div>
+
+  <script type="module">
+    const SUPABASE_URL = 'https://0ec90b57d6e95fcbda19832f.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJib2x0IiwicmVmIjoiMGVjOTBiNTdkNmU5NWZjYmRhMTk4MzJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4ODE1NzQsImV4cCI6MTc1ODg4MTU3NH0.9I8-U0x86Ak8t2DGaIk0HfvTSLsAyzdnz-Nw00mMkKw';
+
+    // Use PostgreSQL client directly
+    async function executeSql(query) {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/exec_sql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ sql: query })
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error);
+      }
+
+      return response.json();
+    }
+
+    window.applyMigration = async function() {
+      const btn = document.getElementById('applyBtn');
+      const result = document.getElementById('result');
+
+      btn.disabled = true;
+      btn.textContent = 'Aplicando...';
+      result.style.display = 'none';
+
+      const steps = [];
+
+      try {
+        // Step 1: Add images column
+        steps.push('Adicionando coluna images...');
+        await executeSql(`
+          DO $$
+          BEGIN
+            IF NOT EXISTS (
+              SELECT 1 FROM information_schema.columns
+              WHERE table_name = 'services' AND column_name = 'images'
+            ) THEN
+              ALTER TABLE services ADD COLUMN images text[] DEFAULT '{}';
+            END IF;
+          END $$;
+        `);
+        steps.push('✓ Coluna images adicionada');
+
+        // Step 2: Migrate data
+        steps.push('Migrando dados existentes...');
+        await executeSql(`
+          UPDATE services
+          SET images = ARRAY[image_url]::text[]
+          WHERE image_url IS NOT NULL AND image_url != '' AND (images IS NULL OR images = '{}');
+        `);
+        steps.push('✓ Dados migrados');
+
+        // Step 3: Drop old column
+        steps.push('Removendo coluna antiga image_url...');
+        await executeSql(`
+          DO $$
+          BEGIN
+            IF EXISTS (
+              SELECT 1 FROM information_schema.columns
+              WHERE table_name = 'services' AND column_name = 'image_url'
+            ) THEN
+              ALTER TABLE services DROP COLUMN image_url;
+            END IF;
+          END $$;
+        `);
+        steps.push('✓ Coluna image_url removida');
+
+        result.className = 'result success';
+        result.style.display = 'block';
+        result.innerHTML = `
+          <strong>✓ Migração aplicada com sucesso!</strong>
+          <div style="margin-top: 15px;">
+            ${steps.map(s => `<div class="step">${s}</div>`).join('')}
+          </div>
+          <p style="margin-top: 15px;"><strong>Próximo passo:</strong> Recarregue a aplicação e teste adicionar múltiplas imagens a um serviço!</p>
+        `;
+      } catch (error) {
+        console.error('Migration error:', error);
+        result.className = 'result error';
+        result.style.display = 'block';
+        result.innerHTML = `
+          <strong>✗ Erro ao aplicar migração:</strong>
+          <pre>${error.message}</pre>
+          ${steps.length > 0 ? `<p><strong>Passos executados:</strong></p>${steps.map(s => `<div class="step">${s}</div>`).join('')}` : ''}
+          <p style="margin-top: 15px;"><strong>Solução manual via SQL Editor:</strong></p>
+          <pre>-- 1. Adicionar coluna images
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'services' AND column_name = 'images'
+  ) THEN
+    ALTER TABLE services ADD COLUMN images text[] DEFAULT '{}';
+  END IF;
+END $$;
+
+-- 2. Migrar dados existentes
+UPDATE services
+SET images = ARRAY[image_url]::text[]
+WHERE image_url IS NOT NULL AND image_url != '' AND (images IS NULL OR images = '{}');
+
+-- 3. Remover coluna antiga
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'services' AND column_name = 'image_url'
+  ) THEN
+    ALTER TABLE services DROP COLUMN image_url;
+  END IF;
+END $$;</pre>
+        `;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Aplicar Migração';
+      }
+    };
+
+    window.checkSchema = async function() {
+      const result = document.getElementById('result');
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/services?select=*&limit=1`, {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          }
+        });
+
+        const data = await response.json();
+        const hasImages = data.length > 0 && 'images' in data[0];
+        const hasImageUrl = data.length > 0 && 'image_url' in data[0];
+
+        result.className = 'result info';
+        result.style.display = 'block';
+        result.innerHTML = `
+          <strong>📊 Estado atual do schema:</strong>
+          <ul>
+            <li>Coluna <code>images</code>: ${hasImages ? '✅ Existe' : '❌ Não existe'}</li>
+            <li>Coluna <code>image_url</code>: ${hasImageUrl ? '⚠️ Ainda existe (precisa migrar)' : '✅ Removida'}</li>
+          </ul>
+          ${!hasImages ? '<p><strong>Ação:</strong> Clique em "Aplicar Migração" para adicionar suporte a múltiplas imagens.</p>' : ''}
+          ${hasImages && hasImageUrl ? '<p><strong>Ação:</strong> Clique em "Aplicar Migração" para completar a migração.</p>' : ''}
+          ${hasImages && !hasImageUrl ? '<p><strong>✓ Migração completa!</strong> O sistema já suporta múltiplas imagens.</p>' : ''}
+        `;
+      } catch (error) {
+        result.className = 'result error';
+        result.style.display = 'block';
+        result.innerHTML = `<strong>✗ Erro ao verificar schema:</strong><pre>${error.message}</pre>`;
+      }
+    };
+  </script>
+</body>
+</html>

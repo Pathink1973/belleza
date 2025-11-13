@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aplicar Migração Supabase</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    button {
+      background: #9333ea;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #7e22ce;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 6px;
+      display: none;
+    }
+    .success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    pre {
+      background: #f9fafb;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 Aplicar Migração - Desabilitar RLS</h1>
+    <p><strong>Atenção:</strong> Esta migração irá desabilitar Row Level Security (RLS) em todas as tabelas para permitir o funcionamento com autenticação local.</p>
+
+    <p><strong>⚠️ AVISO:</strong> Use apenas em desenvolvimento! Não use em produção!</p>
+
+    <button id="applyBtn" onclick="applyMigration()">Aplicar Migração</button>
+
+    <div id="result" class="result"></div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://0ec90b57d6e95fcbda19832f.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJib2x0IiwicmVmIjoiMGVjOTBiNTdkNmU5NWZjYmRhMTk4MzJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4ODE1NzQsImV4cCI6MTc1ODg4MTU3NH0.9I8-U0x86Ak8t2DGaIk0HfvTSLsAyzdnz-Nw00mMkKw';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function applyMigration() {
+      const btn = document.getElementById('applyBtn');
+      const result = document.getElementById('result');
+
+      btn.disabled = true;
+      btn.textContent = 'Aplicando...';
+      result.style.display = 'none';
+
+      const queries = [
+        'ALTER TABLE IF EXISTS profiles DISABLE ROW LEVEL SECURITY',
+        'ALTER TABLE IF EXISTS services DISABLE ROW LEVEL SECURITY',
+        'ALTER TABLE IF EXISTS bookings DISABLE ROW LEVEL SECURITY',
+        'ALTER TABLE IF EXISTS clients DISABLE ROW LEVEL SECURITY',
+        'ALTER TABLE IF EXISTS availability DISABLE ROW LEVEL SECURITY',
+        'ALTER TABLE IF EXISTS blocked_dates DISABLE ROW LEVEL SECURITY'
+      ];
+
+      try {
+        for (const query of queries) {
+          const { error } = await supabase.rpc('exec_sql', { sql: query });
+          if (error) throw error;
+        }
+
+        result.className = 'result success';
+        result.style.display = 'block';
+        result.innerHTML = '<strong>✓ Sucesso!</strong><br>RLS desabilitado em todas as tabelas. Você já pode guardar serviços e clientes.';
+      } catch (error) {
+        result.className = 'result error';
+        result.style.display = 'block';
+        result.innerHTML = `<strong>✗ Erro:</strong><br><pre>${error.message}</pre><br><p><strong>Solução manual:</strong> Execute os seguintes comandos no SQL Editor do Supabase Dashboard:</p><pre>ALTER TABLE profiles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE services DISABLE ROW LEVEL SECURITY;
+ALTER TABLE bookings DISABLE ROW LEVEL SECURITY;
+ALTER TABLE clients DISABLE ROW LEVEL SECURITY;
+ALTER TABLE availability DISABLE ROW LEVEL SECURITY;
+ALTER TABLE blocked_dates DISABLE ROW LEVEL SECURITY;</pre>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Aplicar Migração';
+      }
+    }
+  </script>
+</body>
+</html>
