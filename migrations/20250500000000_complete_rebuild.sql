@@ -1,1 +1,0 @@
-Abra SETUP.html no navegador
