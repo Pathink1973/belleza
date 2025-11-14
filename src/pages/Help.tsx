@@ -137,10 +137,10 @@ export function Help() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
       <div className="max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
         <div className="text-center mb-20">
-          <h1 className="font-abril text-5xl md:text-6xl lg:text-7xl font-semibold text-gray-900 mb-6 leading-tight">
+          <h1 className="font-abril text-3xl md:text-6xl lg:text-7xl font-semibold text-gray-900 mb-6 leading-tight">
             Centro de Ajuda
           </h1>
-          <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed text-center">
             Tudo o que precisa saber para começar.
           </p>
         </div>
@@ -159,7 +159,7 @@ export function Help() {
         </div>
 
         <section className="mb-20">
-          <h2 className="font-abril text-4xl font-semibold text-gray-900 text-center mb-12">
+          <h2 className="font-abril text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-900 text-center mb-12">
             Perguntas Frequentes
           </h2>
 
@@ -214,7 +214,7 @@ export function Help() {
         </section>
 
         <section className="mb-20">
-          <h2 className="font-abril text-4xl font-semibold text-gray-900 text-center mb-12">
+          <h2 className="font-abril text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-900 text-center mb-12">
             Recursos Adicionais
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
@@ -257,16 +257,16 @@ export function Help() {
         </section>
 
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl p-12 text-center text-white shadow-2xl">
-          <h2 className="font-abril text-3xl font-semibold mb-4">
+          <h2 className="font-abril text-xl sm:text-2xl md:text-3xl font-semibold mb-4">
             Não Encontrou a Resposta?
           </h2>
           <p className="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">
             A nossa equipa está pronta para ajudar. Entre em contacto connosco.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <Link
               to="/contact"
-              className="px-8 py-4 bg-white text-blue-600 font-semibold rounded-xl hover:shadow-2xl transition-all duration-200 hover:scale-105"
+              className="px-6 sm:px-8 py-3 sm:py-4 min-h-[48px] sm:min-h-[56px] bg-white text-blue-600 font-semibold rounded-lg sm:rounded-xl hover:shadow-2xl transition-all duration-200 hover:scale-105 text-sm sm:text-base touch-manipulation inline-flex items-center justify-center"
             >
               Contactar Suporte
             </Link>
@@ -274,7 +274,7 @@ export function Help() {
               href="https://wa.me/351962886031"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-8 py-4 bg-transparent border-2 border-white text-white font-semibold rounded-xl hover:bg-white hover:text-blue-600 transition-all duration-200"
+              className="px-6 sm:px-8 py-3 sm:py-4 min-h-[48px] sm:min-h-[56px] bg-transparent border-2 border-white text-white font-semibold rounded-lg sm:rounded-xl hover:bg-white hover:text-blue-600 transition-all duration-200 text-sm sm:text-base touch-manipulation inline-flex items-center justify-center"
             >
               WhatsApp
             </a>

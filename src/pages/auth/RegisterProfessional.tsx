@@ -45,7 +45,7 @@ export function RegisterProfessional() {
             <img
               src="/icons/belleza-logo.svg"
               alt="Belleza"
-              className="h-12 sm:h-16 w-auto mb-3 sm:mb-4"
+              className="h-8 sm:h-12 w-auto mb-3 sm:mb-4"
             />
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mt-4 sm:mt-6">
               Criar Conta de Profissional

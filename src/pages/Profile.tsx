@@ -154,7 +154,7 @@ export function Profile() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Perfil</h1>
+      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-8">Perfil</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6 card-gradient p-6">
         {error && (

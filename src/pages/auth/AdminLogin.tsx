@@ -78,7 +78,7 @@ export function AdminLogin() {
                 <img
                   src="/icons/belleza-logo.svg"
                   alt="Belleza Admin"
-                  className="relative h-10 w-auto transform hover:scale-105 transition-transform brightness-0 invert"
+                  className="relative h-7 sm:h-9 w-auto transform hover:scale-105 transition-transform brightness-0 invert"
                 />
               </div>
 

@@ -156,7 +156,7 @@ Responderemos a todas as questões no prazo de 48 horas úteis.`
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
       <div className="max-w-5xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h1 className="font-abril text-5xl md:text-6xl font-semibold text-gray-900 mb-6 leading-tight">
+          <h1 className="font-abril text-3xl md:text-6xl font-semibold text-gray-900 mb-6 leading-tight">
             Termos de Uso
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">

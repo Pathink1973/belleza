@@ -47,7 +47,7 @@ export function Login() {
             <img
               src="/icons/belleza-logo.svg"
               alt="Belleza"
-              className="h-8 sm:h-10 w-auto mb-3 sm:mb-4"
+              className="h-6 sm:h-9 w-auto mb-3 sm:mb-4"
             />
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mt-4 sm:mt-6">
               Bem-vindo de Volta

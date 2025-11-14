@@ -146,8 +146,8 @@ export function BlockedDates() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Datas Bloqueadas</h1>
-          <p className="text-gray-600 mt-2">Bloqueie datas em que não está disponível (férias, feriados, etc.)</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Datas Bloqueadas</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-2">Bloqueie datas em que não está disponível (férias, feriados, etc.)</p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}

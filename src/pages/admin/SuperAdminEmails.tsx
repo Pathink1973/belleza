@@ -261,11 +261,11 @@ export function SuperAdminEmails() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-            <Mail className="h-8 w-8 mr-3 text-blue-600" />
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 flex items-center">
+            <Mail className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 mr-2 sm:mr-3 text-blue-600" />
             Mensagens de Contacto
           </h1>
-          <p className="mt-2 text-gray-600">Gerir todas as mensagens recebidas através do formulário de contacto</p>
+          <p className="mt-2 text-sm sm:text-base text-gray-600">Gerir todas as mensagens recebidas através do formulário de contacto</p>
         </div>
       </div>
 

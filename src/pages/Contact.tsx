@@ -90,10 +90,10 @@ export function Contact() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
       <div className="max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
         <div className="text-center mb-20">
-          <h1 className="font-abril text-5xl md:text-6xl lg:text-7xl font-semibold text-gray-900 mb-6 leading-tight">
+          <h1 className="font-abril text-3xl md:text-6xl lg:text-7xl font-semibold text-gray-900 mb-6 leading-tight">
             Contacte-nos
           </h1>
-          <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed text-center">
             Estamos aqui para ajudar. Entre em contacto connosco.
           </p>
         </div>
@@ -119,7 +119,7 @@ export function Contact() {
 
         <div className="grid lg:grid-cols-2 gap-12 mb-16">
           <div>
-            <h2 className="font-abril text-3xl font-semibold text-gray-900 mb-6">
+            <h2 className="font-abril text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900 mb-6">
               Envie-nos uma Mensagem
             </h2>
             <p className="text-gray-600 mb-8">
@@ -213,16 +213,16 @@ export function Contact() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:shadow-xl transition-all duration-200 hover:scale-105 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="w-full px-6 sm:px-8 py-3 sm:py-4 min-h-[48px] sm:min-h-[56px] bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg sm:rounded-xl hover:shadow-xl transition-all duration-200 hover:scale-105 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-sm sm:text-base touch-manipulation"
                 >
                   {loading ? (
                     <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white mr-2"></div>
                       Enviando...
                     </>
                   ) : (
                     <>
-                      <Send className="h-5 w-5 mr-2" />
+                      <Send className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                       Enviar Mensagem
                     </>
                   )}
@@ -232,7 +232,7 @@ export function Contact() {
           </div>
 
           <div>
-            <h2 className="font-abril text-3xl font-semibold text-gray-900 mb-6">
+            <h2 className="font-abril text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900 mb-6">
               Horário de Atendimento
             </h2>
             <GlowCard glowColor="blue" customSize={true} variant="white" className="!p-6 mb-8">
@@ -258,7 +258,7 @@ export function Contact() {
               </div>
             </GlowCard>
 
-            <h2 className="font-abril text-3xl font-semibold text-gray-900 mb-6">
+            <h2 className="font-abril text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900 mb-6">
               Cobertura Nacional
             </h2>
             <GlowCard glowColor="purple" customSize={true} variant="white" className="!p-6">
@@ -287,7 +287,7 @@ export function Contact() {
         </div>
 
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl p-12 text-center text-white shadow-2xl">
-          <h2 className="font-abril text-3xl font-semibold mb-4">
+          <h2 className="font-abril text-xl sm:text-2xl md:text-3xl font-semibold mb-4">
             Resposta Rápida
           </h2>
           <p className="text-lg text-blue-100 mb-6">

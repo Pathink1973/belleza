@@ -37,10 +37,10 @@ export function About() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
       <div className="max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
         <div className="text-center mb-20">
-          <h1 className="font-abril text-5xl md:text-6xl lg:text-7xl font-semibold text-gray-900 mb-6 leading-tight">
+          <h1 className="font-abril text-3xl md:text-6xl lg:text-7xl font-semibold text-gray-900 mb-6 leading-tight">
             Sobre a Belleza
           </h1>
-          <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed text-center">
             Conectamos pessoas aos melhores profissionais de beleza e bem-estar em Portugal, numa plataforma projetada para simplificar seu negócio.
           </p>
         </div>
@@ -48,13 +48,13 @@ export function About() {
         <section className="mb-24">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="font-abril text-4xl font-semibold text-gray-900 mb-6">
+              <h2 className="font-abril text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-900 mb-6">
                 A Nossa Missão
               </h2>
-              <p className="text-lg text-gray-700 leading-relaxed mb-6">
+              <p className="text-lg text-gray-700 leading-relaxed mb-6 text-center md:text-left">
                 Tornar os serviços de beleza e bem-estar acessíveis a todos, através de uma plataforma simples, intuitiva e confiável.
               </p>
-              <p className="text-lg text-gray-700 leading-relaxed">
+              <p className="text-lg text-gray-700 leading-relaxed text-center md:text-left">
                 Capacitamos profissionais com ferramentas modernas de gestão, enquanto oferecemos aos clientes uma experiência de reserva sem complicações. Queremos ajudar-lo a expandir seu negócio, atrair novos clientes e aumentar as vendas.
               </p>
             </div>
@@ -69,7 +69,7 @@ export function About() {
         </section>
 
         <section className="mb-24">
-          <h2 className="font-abril text-4xl font-semibold text-gray-900 text-center mb-12">
+          <h2 className="font-abril text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-900 text-center mb-12">
             Os Nossos Valores
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -93,7 +93,7 @@ export function About() {
         </section>
 
         <section className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl p-12 text-center text-white shadow-2xl">
-          <h2 className="font-abril text-4xl font-semibold mb-6">
+          <h2 className="font-abril text-2xl sm:text-3xl md:text-4xl font-semibold mb-6">
             Junte-se a Nós
           </h2>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">

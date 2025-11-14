@@ -72,13 +72,13 @@ export function Layout({ children }: LayoutProps) {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
       <nav className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-          <div className="flex justify-between h-14 sm:h-16">
+          <div className="flex justify-between h-16 sm:h-18 md:h-20">
             <div className="flex items-center flex-1">
               <Link to="/" className="flex items-center space-x-2 sm:space-x-3">
                 <img
                   src="/icons/belleza-logo.svg"
                   alt="Belleza"
-                  className="h-8 sm:h-10 w-auto"
+                  className="h-7 sm:h-9 md:h-11 w-auto"
                 />
               </Link>
 
@@ -300,10 +300,10 @@ export function Layout({ children }: LayoutProps) {
 
               <button
                 onClick={() => setShowMobileMenu(!showMobileMenu)}
-                className="lg:hidden ml-2 p-3 min-h-[48px] min-w-[48px] rounded-xl text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition-all duration-200 active:scale-90 touch-manipulation flex items-center justify-center"
+                className="lg:hidden ml-2 p-3 min-h-[56px] min-w-[56px] rounded-xl text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition-all duration-200 active:scale-95 touch-manipulation flex items-center justify-center shadow-sm"
                 aria-label="Toggle menu"
               >
-                {showMobileMenu ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                {showMobileMenu ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
               </button>
             </div>
 
@@ -373,7 +373,7 @@ export function Layout({ children }: LayoutProps) {
           </div>
 
           {showMobileMenu && (
-            <div className="lg:hidden border-t border-slate-200 py-4 space-y-2 animate-slide-up bg-white shadow-lg">
+            <div className="lg:hidden border-t border-slate-200 py-4 space-y-2 animate-slide-up bg-white shadow-lg max-h-[calc(100vh-5rem)] overflow-y-auto scrollbar-thin">
               {profile?.role === 'super_admin' ? (
                 <>
                   <Link
@@ -422,26 +422,26 @@ export function Layout({ children }: LayoutProps) {
                 <>
                   <Link
                     to="/admin/dashboard"
-                    className={`flex items-center px-4 py-3 text-sm font-medium transition-colors ${
+                    className={`flex items-center px-5 py-4 min-h-[56px] text-base font-semibold transition-all duration-200 rounded-xl mx-2 active:scale-98 touch-manipulation ${
                       isActiveRoute('/admin/dashboard')
-                        ? 'text-blue-600 bg-blue-50'
+                        ? 'text-blue-600 bg-blue-50 shadow-sm'
                         : 'text-slate-700 hover:bg-slate-50'
                     }`}
                     onClick={() => setShowMobileMenu(false)}
                   >
-                    <Home className="h-5 w-5 mr-3" />
+                    <Home className="h-6 w-6 mr-3 flex-shrink-0" />
                     <span>Dashboard Admin</span>
                   </Link>
                   <Link
                     to="/"
-                    className={`flex items-center px-4 py-3 text-sm font-medium transition-colors ${
+                    className={`flex items-center px-5 py-4 min-h-[56px] text-base font-semibold transition-all duration-200 rounded-xl mx-2 active:scale-98 touch-manipulation ${
                       location.pathname === '/'
-                        ? 'text-blue-600 bg-blue-50'
+                        ? 'text-blue-600 bg-blue-50 shadow-sm'
                         : 'text-slate-700 hover:bg-slate-50'
                     }`}
                     onClick={() => setShowMobileMenu(false)}
                   >
-                    <Search className="h-5 w-5 mr-3" />
+                    <Search className="h-6 w-6 mr-3 flex-shrink-0" />
                     <span>Ver Plataforma</span>
                   </Link>
                 </>
@@ -563,7 +563,7 @@ export function Layout({ children }: LayoutProps) {
           )}
         </div>
       </nav>
-      <main className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
+      <main className="max-w-7xl mx-auto px-2 sm:px-6 md:px-8 lg:px-10 py-3 sm:py-7 md:py-9">
         {children}
       </main>
     </div>

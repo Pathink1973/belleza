@@ -232,8 +232,8 @@ export function Reviews() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Avaliações</h1>
-        <p className="text-gray-600 mt-2">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Avaliações</h1>
+        <p className="text-sm sm:text-base text-gray-600 mt-2">
           {profile?.role === 'professional'
             ? 'Veja as avaliações dos seus clientes'
             : 'Gerencie as suas avaliações'}

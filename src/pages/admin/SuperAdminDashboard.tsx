@@ -252,8 +252,8 @@ export function SuperAdminDashboard() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Super Admin Dashboard</h1>
-          <p className="mt-2 text-gray-600">Visão geral completa da plataforma</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Super Admin Dashboard</h1>
+          <p className="mt-2 text-sm sm:text-base text-gray-600">Visão geral completa da plataforma</p>
         </div>
         <button
           onClick={() => navigate('/super-admin/emails')}

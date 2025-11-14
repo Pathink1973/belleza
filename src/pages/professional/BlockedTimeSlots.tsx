@@ -152,13 +152,13 @@ export function BlockedTimeSlots() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center space-x-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center shadow-lg">
-              <Ban className="h-6 w-6 text-white" />
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 flex items-center space-x-3">
+            <div className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center shadow-lg">
+              <Ban className="h-5 w-5 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
             </div>
             <span>Bloqueio de Horários</span>
           </h1>
-          <p className="text-gray-600 mt-2 ml-13">Bloqueie horários específicos dentro de um dia (ex: almoço, reunião, pausa)</p>
+          <p className="text-sm sm:text-base text-gray-600 mt-2 ml-13">Bloqueie horários específicos dentro de um dia (ex: almoço, reunião, pausa)</p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}

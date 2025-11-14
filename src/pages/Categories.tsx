@@ -86,32 +86,32 @@ export function Categories() {
 
   return (
     <div className="min-h-screen animated-pastel-gradient">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-8 sm:py-12">
-        <div className="text-center mb-8 sm:mb-12">
-          <div className="inline-flex items-center justify-center p-2 sm:p-3 bg-white rounded-2xl shadow-lg mb-4 sm:mb-6">
-            <Scissors className="h-8 w-8 sm:h-10 sm:w-10 text-blue-600" />
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-12">
+        <div className="text-center mb-4 sm:mb-12">
+          <div className="inline-flex items-center justify-center p-1.5 sm:p-3 bg-white rounded-xl sm:rounded-2xl shadow-lg mb-2 sm:mb-6">
+            <Scissors className="h-6 w-6 sm:h-10 sm:w-10 text-blue-600" />
           </div>
 
-          <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-3 sm:mb-4 px-2">
+          <h1 className="text-xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-2 sm:mb-4 px-2">
             Explore todas as{' '}
             <span className="bg-gradient-to-r from-blue-600 to-blue-600 bg-clip-text text-transparent">
               categorias
             </span>
           </h1>
 
-          <p className="text-base sm:text-xl text-gray-600 max-w-2xl mx-auto mb-4 sm:mb-6 px-4">
+          <p className="text-sm sm:text-xl text-gray-600 max-w-2xl mx-auto mb-3 sm:mb-6 px-4">
             Descubra os melhores profissionais para cada tipo de serviço
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-gray-500">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-blue-600" />
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-6 text-[11px] sm:text-sm text-gray-500">
+            <div className="flex items-center gap-1.5">
+              <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
               <span>
                 <span className="font-semibold text-gray-900">{totalServices}</span> serviços disponíveis
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-blue-600" />
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
               <span>
                 <span className="font-semibold text-gray-900">{categories.length}</span> categorias ativas
               </span>
@@ -139,7 +139,7 @@ export function Categories() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-8 sm:mb-12">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4 md:gap-6 mb-4 sm:mb-12">
               {categories.map((category, index) => (
                 <Link
                   key={category.name}
@@ -150,25 +150,25 @@ export function Categories() {
                     glowColor={index % 3 === 0 ? 'blue' : index % 3 === 1 ? 'purple' : 'green'}
                     customSize={true}
                     variant="white"
-                    className="w-full h-full aspect-auto !p-5 sm:!p-6 hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+                    className="w-full h-full aspect-auto !p-3 sm:!p-6 hover:scale-[1.02] transition-all duration-200 cursor-pointer"
                   >
-                    <div className="flex flex-col items-center justify-center h-full text-center space-y-3">
-                      <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                    <div className="flex flex-col items-center justify-center h-full text-center space-y-2 sm:space-y-3">
+                      <h3 className="text-sm sm:text-xl md:text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors leading-tight">
                         {category.name}
                       </h3>
 
-                      <div className="flex items-center gap-2 text-sm sm:text-base">
-                        <div className="px-4 py-2 bg-blue-50 rounded-full">
-                          <span className="font-semibold text-blue-600">
+                      <div className="flex items-center gap-1.5 text-xs sm:text-base">
+                        <div className="px-2.5 py-1 sm:px-4 sm:py-2 bg-blue-50 rounded-full">
+                          <span className="font-semibold text-blue-600 text-[11px] sm:text-base">
                             {category.count}
                           </span>
-                          <span className="text-blue-500 ml-1">
+                          <span className="text-blue-500 ml-0.5 sm:ml-1 text-[11px] sm:text-base">
                             {category.count === 1 ? 'serviço' : 'serviços'}
                           </span>
                         </div>
                       </div>
 
-                      <div className="flex items-center text-blue-600 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="hidden sm:flex items-center text-blue-600 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         <span>Ver serviços</span>
                         <ArrowRight className="h-4 w-4 ml-1 transform group-hover:translate-x-1 transition-transform" />
                       </div>
@@ -178,24 +178,24 @@ export function Categories() {
               ))}
             </div>
 
-            <div className="bg-gradient-to-r from-blue-600 to-blue-600 rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 md:p-12 text-center text-white">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-600 rounded-xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 md:p-12 text-center text-white">
+              <h2 className="text-lg sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-4">
                 Não encontrou o que procura?
               </h2>
-              <p className="text-base sm:text-xl text-blue-100 mb-6 sm:mb-8 max-w-2xl mx-auto px-4">
+              <p className="text-sm sm:text-xl text-blue-100 mb-4 sm:mb-8 max-w-2xl mx-auto px-4">
                 Use a pesquisa para encontrar serviços específicos ou explore todos os nossos profissionais
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
                 <Link
                   to="/services"
-                  className="inline-flex items-center justify-center px-8 py-4 bg-white text-blue-600 font-semibold rounded-xl hover:shadow-2xl transition-all duration-200 hover:scale-105"
+                  className="inline-flex items-center justify-center px-6 py-3 sm:px-8 sm:py-4 bg-white text-blue-600 font-semibold rounded-lg sm:rounded-xl hover:shadow-2xl transition-all duration-200 hover:scale-105 text-sm sm:text-base"
                 >
                   Ver todos os serviços
-                  <ArrowRight className="h-5 w-5 ml-2" />
+                  <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
                 </Link>
                 <Link
                   to="/"
-                  className="inline-flex items-center justify-center px-8 py-4 bg-transparent border-2 border-white text-white font-semibold rounded-xl hover:bg-white hover:text-blue-600 transition-all duration-200"
+                  className="inline-flex items-center justify-center px-6 py-3 sm:px-8 sm:py-4 bg-transparent border-2 border-white text-white font-semibold rounded-lg sm:rounded-xl hover:bg-white hover:text-blue-600 transition-all duration-200 text-sm sm:text-base"
                 >
                   Voltar ao início
                 </Link>

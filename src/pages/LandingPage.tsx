@@ -292,19 +292,19 @@ export function LandingPage() {
             <img
               src="/icons/belleza-logo.svg"
               alt="Belleza"
-              className="h-8 sm:h-10 w-auto"
+              className="h-6 sm:h-9 w-auto"
             />
           </div>
           <div className="flex items-center space-x-2 sm:space-x-4">
             <Link
               to="/auth/login"
-              className="text-gray-700 hover:text-blue-600 font-semibold transition-colors text-base min-h-[52px] flex items-center px-4 active:scale-[0.97] touch-manipulation tracking-wide"
+              className="text-gray-700 hover:text-blue-600 font-semibold transition-colors text-sm sm:text-base min-h-[44px] flex items-center px-3 sm:px-4 active:scale-[0.97] touch-manipulation tracking-wide"
             >
               Entrar
             </Link>
             <Link
               to="/auth/register"
-              className="px-6 sm:px-7 py-3 sm:py-3.5 min-h-[52px] sm:min-h-[54px] bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 hover:shadow-xl active:scale-[0.97] transition-all duration-200 text-base flex items-center justify-center touch-manipulation shadow-lg tracking-wide"
+              className="px-4 sm:px-7 py-2.5 sm:py-3.5 min-h-[44px] sm:min-h-[54px] bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-blue-800 hover:shadow-xl active:scale-[0.97] transition-all duration-200 text-sm sm:text-base flex items-center justify-center touch-manipulation shadow-lg tracking-wide"
             >
               Registar
             </Link>
@@ -316,13 +316,13 @@ export function LandingPage() {
       <section className="relative pt-24 sm:pt-32 pb-16 sm:pb-32 px-3 sm:px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8 sm:mb-12">
-            <h1 className="font-abril text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold text-gray-900 mb-4 sm:mb-6 leading-tight px-2">
+            <h1 className="font-abril text-2xl sm:text-4xl md:text-6xl lg:text-7xl font-semibold text-gray-900 mb-4 sm:mb-6 leading-tight px-2">
               Reserve serviços de beleza<br />
               <span className="bg-gradient-to-r from-blue-600 to-blue-600 bg-clip-text text-transparent">
                 e bem-estar
               </span> na sua região
             </h1>
-            <p className="text-base sm:text-xl text-gray-600 max-w-2xl mx-auto mb-6 sm:mb-8 px-4">
+            <p className="text-sm sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto mb-6 sm:mb-8 px-4">
               Descubra e marque com os melhores profissionais perto de si
             </p>
           </div>
@@ -368,7 +368,7 @@ export function LandingPage() {
                 <div className="md:col-span-3">
                   <button
                     type="submit"
-                    className="w-full py-4 min-h-[56px] bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-xl hover:from-blue-700 hover:to-blue-800 hover:shadow-2xl active:scale-[0.97] transition-all duration-200 text-base touch-manipulation shadow-lg tracking-wide"
+                    className="w-full py-3 sm:py-4 min-h-[48px] sm:min-h-[56px] bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-blue-800 hover:shadow-2xl active:scale-[0.97] transition-all duration-200 text-sm sm:text-base touch-manipulation shadow-lg tracking-wide"
                   >
                     Pesquisar
                   </button>
@@ -384,11 +384,11 @@ export function LandingPage() {
         <section className="py-12 sm:py-20 px-3 sm:px-4 bg-white">
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col sm:flex-row justify-between items-center mb-8 sm:mb-12 gap-4">
-              <div>
-                <h2 className="font-abril text-4xl font-semibold text-gray-900 mb-2">
+              <div className="text-center sm:text-left">
+                <h2 className="font-abril text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-900 mb-2">
                   Serviços em destaque
                 </h2>
-                <p className="text-xl text-gray-600">
+                <p className="text-base sm:text-lg md:text-xl text-gray-600">
                   Os mais populares perto de si
                 </p>
               </div>
@@ -500,12 +500,12 @@ export function LandingPage() {
                         {formatCurrency(service.price)}
                       </div>
                     </div>
-                    <div className="mt-4 flex flex-col sm:flex-row gap-3">
+                    <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
                       <Link
                         to={`/services/${service.id}`}
-                        className="btn-gradient inline-flex items-center justify-center flex-1 lg:px-4 lg:py-2 lg:text-sm"
+                        className="btn-gradient inline-flex items-center justify-center flex-1"
                       >
-                        <Calendar className="h-4 w-4 sm:h-5 sm:w-5 lg:h-4 lg:w-4 mr-2.5 flex-shrink-0" />
+                        <Calendar className="h-3.5 w-3.5 sm:h-5 sm:w-5 mr-1.5 sm:mr-2 flex-shrink-0" />
                         <span>Agendar</span>
                       </Link>
                       {service.whatsapp_number && (
@@ -518,10 +518,10 @@ export function LandingPage() {
                               businessName: service.professional.business_name || service.professional.full_name
                             });
                           }}
-                          className="btn-whatsapp inline-flex items-center justify-center flex-1 lg:px-4 lg:py-2 lg:text-sm"
+                          className="btn-whatsapp inline-flex items-center justify-center flex-1"
                           aria-label="Contactar via WhatsApp"
                         >
-                          <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 lg:h-4 lg:w-4 mr-2.5 flex-shrink-0" />
+                          <MessageCircle className="h-3.5 w-3.5 sm:h-5 sm:w-5 mr-1.5 sm:mr-2 flex-shrink-0" />
                           <span>WhatsApp</span>
                         </button>
                       )}
@@ -589,10 +589,10 @@ export function LandingPage() {
 
             {/* Left Side: Text Content */}
             <div className="w-full lg:w-1/2 text-center lg:text-left">
-              <h2 className="font-['Noto_Serif_Display'] text-3xl sm:text-4xl md:text-5xl font-semibold text-gray-900 mb-4 sm:mb-6 leading-tight">
+              <h2 className="font-['Noto_Serif_Display'] text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold text-gray-900 mb-4 sm:mb-6 leading-tight">
                 Plataforma completa para o seu negócio
               </h2>
-              <p className="text-base sm:text-xl text-gray-600 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+              <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 max-w-xl mx-auto lg:mx-0 leading-relaxed">
                 Criada para proporcionar uma experiência tranquila para melhorar o seu negócio e elevar a sua marca. Ajuda a aumentar a presença digital do seu salão, facilitando a marcação de serviços diretamente a partir de links, QR codes ou redes sociais. Transforme cada interação online numa oportunidade de negócio.
               </p>
 
@@ -648,10 +648,10 @@ export function LandingPage() {
         <section className="py-20 px-4">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="font-abril text-4xl font-semibold text-gray-900 mb-4">
+              <h2 className="font-abril text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-900 mb-4">
                 Profissionais de destaque
               </h2>
-              <p className="text-xl text-gray-600">
+              <p className="text-base sm:text-lg md:text-xl text-gray-600">
                 Conheça os nossos parceiros certificados
               </p>
             </div>
@@ -690,10 +690,10 @@ export function LandingPage() {
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="font-abril text-4xl font-semibold text-gray-900 mb-4">
+            <h2 className="font-abril text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-900 mb-4">
               O que dizem os nossos clientes
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-base sm:text-lg md:text-xl text-gray-600">
               Milhares de clientes satisfeitos todos os dias
             </p>
           </div>
@@ -736,7 +736,7 @@ export function LandingPage() {
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="font-abril text-4xl font-semibold text-gray-900 mb-4">
+            <h2 className="font-abril text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-900 mb-4">
               Porquê escolher a nossa plataforma?
             </h2>
           </div>
@@ -782,22 +782,22 @@ export function LandingPage() {
       {/* CTA Section */}
       <section className="py-20 px-4 bg-gradient-to-r from-blue-600 to-blue-600 text-white">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="font-abril text-4xl md:text-5xl font-semibold mb-6">
+          <h2 className="font-abril text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold mb-6">
             Pronto para começar?
           </h2>
-          <p className="text-xl mb-8 text-blue-100">
+          <p className="text-base sm:text-lg md:text-xl mb-8 text-blue-100">
             Junte-se a milhares de clientes satisfeitos
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto sm:max-w-none">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center max-w-md mx-auto sm:max-w-none">
             <Link
               to="/auth/register"
-              className="px-8 py-4 min-h-[56px] bg-white text-blue-600 font-bold rounded-xl hover:shadow-2xl active:scale-[0.97] transition-all duration-200 text-base flex items-center justify-center touch-manipulation shadow-lg tracking-wide"
+              className="px-6 sm:px-8 py-3 sm:py-4 min-h-[48px] sm:min-h-[56px] bg-white text-blue-600 font-bold rounded-lg sm:rounded-xl hover:shadow-2xl active:scale-[0.97] transition-all duration-200 text-sm sm:text-base flex items-center justify-center touch-manipulation shadow-lg tracking-wide"
             >
               Criar conta grátis
             </Link>
             <Link
               to="/services"
-              className="px-8 py-4 min-h-[56px] bg-transparent border-2 border-white text-white font-bold rounded-xl hover:bg-white hover:text-blue-600 active:scale-[0.97] transition-all duration-200 text-base flex items-center justify-center touch-manipulation tracking-wide"
+              className="px-6 sm:px-8 py-3 sm:py-4 min-h-[48px] sm:min-h-[56px] bg-transparent border-2 border-white text-white font-bold rounded-lg sm:rounded-xl hover:bg-white hover:text-blue-600 active:scale-[0.97] transition-all duration-200 text-sm sm:text-base flex items-center justify-center touch-manipulation tracking-wide"
             >
               Explorar serviços
             </Link>
@@ -814,7 +814,7 @@ export function LandingPage() {
                 <img
                   src="/icons/belleza-logo.svg"
                   alt="Belleza"
-                  className="h-8 w-auto brightness-0 invert"
+                  className="h-6 sm:h-8 w-auto brightness-0 invert"
                 />
               </div>
               <p className="text-gray-400 text-sm">

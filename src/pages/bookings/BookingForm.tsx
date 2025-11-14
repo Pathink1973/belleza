@@ -1091,9 +1091,9 @@ export function BookingForm() {
       </form>
 
       {showProfessionalModal && selectedTimeSlot && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center rounded-t-2xl">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl max-w-lg w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom duration-300">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-5 py-5 sm:px-6 sm:py-5 flex justify-between items-center rounded-t-3xl sm:rounded-t-2xl z-10">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">Escolha o Profissional</h2>
                 <p className="text-sm text-gray-600 mt-1">Horário: {selectedTimeSlot.time}</p>
@@ -1103,13 +1103,13 @@ export function BookingForm() {
                   setShowProfessionalModal(false);
                   setSelectedTimeSlot(null);
                 }}
-                className="text-gray-400 hover:text-gray-500 p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="text-gray-400 hover:text-gray-500 p-3 hover:bg-gray-100 rounded-full transition-colors min-h-[56px] min-w-[56px] flex items-center justify-center touch-manipulation active:scale-95"
               >
-                <XCircle className="h-6 w-6" />
+                <XCircle className="h-7 w-7" />
               </button>
             </div>
 
-            <div className="p-6">
+            <div className="p-5 sm:p-6 md:p-8">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <div className="flex items-start">
                   <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
@@ -1128,13 +1128,13 @@ export function BookingForm() {
                     key={professional.unique_id}
                     type="button"
                     onClick={() => handleProfessionalSelect(professional.unique_id)}
-                    className="w-full flex items-center p-4 rounded-xl border-2 border-gray-200 bg-white hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 group"
+                    className="w-full flex items-center p-5 sm:p-6 rounded-xl border-2 border-gray-200 bg-white hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 group min-h-[80px] touch-manipulation active:scale-98"
                   >
                     <div className="relative">
                       <img
                         src={professional.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(professional.full_name)}&background=random`}
                         alt={professional.full_name}
-                        className="h-16 w-16 rounded-full object-cover border-2 border-white shadow-md group-hover:border-blue-500 transition-all"
+                        className="h-16 w-16 sm:h-18 sm:w-18 rounded-full object-cover border-2 border-white shadow-md group-hover:border-blue-500 transition-all"
                       />
                       {professional.is_primary && (
                         <div className="absolute -bottom-1 -right-1 bg-blue-600 h-6 w-6 rounded-full border-2 border-white flex items-center justify-center">

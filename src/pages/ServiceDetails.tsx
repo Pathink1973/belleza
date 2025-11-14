@@ -253,19 +253,19 @@ export function ServiceDetails() {
           <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{service.title}</h1>
             {isOwner && (
-              <div className="flex space-x-2">
+              <div className="flex gap-2">
                 <button
                   onClick={() => navigate(`/professional/services/${id}/edit`)}
-                  className="btn-gradient inline-flex items-center"
+                  className="btn-compact inline-flex items-center"
                 >
-                  <Edit className="h-4 w-4 mr-2" />
+                  <Edit className="h-4 w-4 mr-1.5 sm:mr-2" />
                   {t('services.details.actions.edit')}
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="inline-flex items-center px-3 py-2 border border-red-600 text-red-600 rounded-md hover:bg-red-50"
+                  className="inline-flex items-center px-3 sm:px-4 py-2 min-h-[44px] border border-red-600 text-red-600 rounded-lg hover:bg-red-50 text-sm font-medium touch-manipulation"
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="h-4 w-4 mr-1.5 sm:mr-2" />
                   {t('services.details.actions.delete')}
                 </button>
               </div>
@@ -380,7 +380,7 @@ export function ServiceDetails() {
                             onClick={() => handleBooking(variant.id)}
                             className="btn-gradient inline-flex items-center justify-center whitespace-nowrap"
                           >
-                            <Calendar className="h-4 w-4 sm:h-4 sm:w-4 mr-2 sm:mr-2.5 flex-shrink-0" />
+                            <Calendar className="h-3.5 w-3.5 sm:h-5 sm:w-5 mr-1 sm:mr-2 flex-shrink-0" />
                             <span>Agendar</span>
                           </button>
                           <button
@@ -388,7 +388,7 @@ export function ServiceDetails() {
                             className="btn-whatsapp-compact inline-flex items-center justify-center whitespace-nowrap"
                             aria-label="Contactar via WhatsApp"
                           >
-                            <MessageCircle className="h-4 w-4 sm:h-4 sm:w-4 mr-2 sm:mr-2.5 flex-shrink-0" />
+                            <MessageCircle className="h-3.5 w-3.5 sm:h-5 sm:w-5 mr-1 sm:mr-2 flex-shrink-0" />
                             <span>WhatsApp</span>
                           </button>
                         </div>
@@ -403,7 +403,7 @@ export function ServiceDetails() {
                     onClick={() => handleWhatsAppContact()}
                     className="btn-whatsapp inline-flex items-center"
                   >
-                    <MessageCircle className="h-5 w-5 mr-2.5" />
+                    <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-2.5" />
                     Contactar via WhatsApp
                   </button>
                 </div>
@@ -427,7 +427,7 @@ export function ServiceDetails() {
                       onClick={() => handleBooking()}
                       className="btn-gradient inline-flex items-center justify-center whitespace-nowrap"
                     >
-                      <Calendar className="h-4 w-4 sm:h-4 sm:w-4 mr-2 sm:mr-2.5 flex-shrink-0" />
+                      <Calendar className="h-3.5 w-3.5 sm:h-5 sm:w-5 mr-1 sm:mr-2 flex-shrink-0" />
                       <span>Agendar</span>
                     </button>
                     <button
@@ -435,7 +435,7 @@ export function ServiceDetails() {
                       className="btn-whatsapp-compact inline-flex items-center justify-center whitespace-nowrap"
                       aria-label="Contactar via WhatsApp"
                     >
-                      <MessageCircle className="h-4 w-4 sm:h-4 sm:w-4 mr-2 sm:mr-2.5 flex-shrink-0" />
+                      <MessageCircle className="h-3.5 w-3.5 sm:h-5 sm:w-5 mr-1 sm:mr-2 flex-shrink-0" />
                       <span>WhatsApp</span>
                     </button>
                   </div>

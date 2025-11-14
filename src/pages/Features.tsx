@@ -82,10 +82,10 @@ export function Features() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
       <div className="max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
         <div className="text-center mb-20">
-          <h1 className="font-abril text-5xl md:text-6xl lg:text-7xl font-semibold text-gray-900 mb-6 leading-tight">
+          <h1 className="font-abril text-3xl md:text-6xl lg:text-7xl font-semibold text-gray-900 mb-6 leading-tight">
             Funcionalidades
           </h1>
-          <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed text-center">
             Tudo o que precisa para gerir o seu negócio de beleza com sucesso.
           </p>
         </div>
@@ -116,7 +116,7 @@ export function Features() {
         </div>
 
         <section className="mb-20">
-          <h2 className="font-abril text-4xl font-semibold text-gray-900 text-center mb-12">
+          <h2 className="font-abril text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-900 text-center mb-12">
             E Muito Mais
           </h2>
           <div className="grid md:grid-cols-3 gap-6">
@@ -140,7 +140,7 @@ export function Features() {
         </section>
 
         <section className="mb-20 bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl p-12 text-white">
-          <h2 className="font-abril text-4xl font-semibold text-center mb-12">
+          <h2 className="font-abril text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-12">
             Resultados Reais
           </h2>
           <div className="grid md:grid-cols-4 gap-8">
@@ -154,7 +154,7 @@ export function Features() {
         </section>
 
         <section className="mb-20">
-          <h2 className="font-abril text-4xl font-semibold text-gray-900 text-center mb-12">
+          <h2 className="font-abril text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-900 text-center mb-12">
             O Que Dizem os Profissionais
           </h2>
           <div className="grid md:grid-cols-2 gap-8">
@@ -183,7 +183,7 @@ export function Features() {
         <section className="mb-20">
           <GlowCard glowColor="green" customSize={true} className="!p-12 text-center">
             <TrendingUp className="h-16 w-16 text-green-600 mx-auto mb-6" />
-            <h2 className="font-abril text-3xl font-semibold text-gray-900 mb-4">
+            <h2 className="font-abril text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900 mb-4">
               Faça Crescer o Seu Negócio
             </h2>
             <p className="text-xl text-gray-600 mb-6 max-w-2xl mx-auto">
@@ -207,7 +207,7 @@ export function Features() {
         </section>
 
         <section className="bg-gray-100 rounded-3xl p-8 md:p-12">
-          <h2 className="font-abril text-3xl font-semibold text-gray-900 text-center mb-8">
+          <h2 className="font-abril text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900 text-center mb-8">
             Perguntas Frequentes
           </h2>
           <div className="max-w-3xl mx-auto space-y-6">

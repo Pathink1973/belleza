@@ -303,8 +303,8 @@ export function Services() {
   };
 
   const ServiceDetailsPopup = ({ service }: { service: Service }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-0 sm:p-4">
-      <div className="bg-white rounded-none sm:rounded-xl max-w-2xl w-full h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl animate-in slide-in-from-bottom sm:slide-in-from-bottom-0 duration-300">
         <div className="relative">
           {service.images && service.images.length > 0 && (
             <div className="grid grid-cols-2 gap-2 p-2">
@@ -320,13 +320,13 @@ export function Services() {
           )}
           <button
             onClick={handleClosePopup}
-            className="absolute top-4 right-4 p-3 min-h-[48px] min-w-[48px] bg-white rounded-full shadow-lg hover:bg-gray-100 active:scale-90 transition-all duration-200 z-10 touch-manipulation flex items-center justify-center"
+            className="absolute top-4 right-4 p-2.5 sm:p-4 min-h-[44px] min-w-[44px] sm:min-h-[56px] sm:min-w-[56px] bg-white rounded-full shadow-lg hover:bg-gray-100 active:scale-95 transition-all duration-200 z-10 touch-manipulation flex items-center justify-center"
           >
-            <X className="h-6 w-6 text-gray-600" />
+            <X className="h-5 w-5 sm:h-7 sm:w-7 text-gray-600" />
           </button>
         </div>
 
-        <div className="p-6">
+        <div className="p-5 sm:p-6 md:p-8">
           <div className="flex justify-between items-start">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">{service.title}</h2>
@@ -469,12 +469,12 @@ export function Services() {
             </div>
           )}
 
-          <div className="mt-6 flex justify-end sticky bottom-0 bg-white pt-4 pb-2 border-t sm:border-0 sm:static">
+          <div className="mt-6 flex justify-end sticky bottom-0 bg-white pt-5 pb-4 border-t sm:border-0 sm:static safe-area-bottom">
             <button
               onClick={() => handleWhatsAppClickPopup(service)}
-              className="btn-whatsapp inline-flex items-center justify-center w-full sm:w-auto min-h-[56px]"
+              className="btn-whatsapp inline-flex items-center justify-center w-full sm:w-auto"
             >
-              <MessageCircle className="h-5 w-5 mr-2.5" />
+              <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3" />
               {t('services.details.actions.contactViaWhatsApp')}
             </button>
           </div>
@@ -494,7 +494,7 @@ export function Services() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
           {user?.role === 'professional' ? t('services.yourServices') : t('services.availableServices')}
         </h1>
         {user?.role === 'professional' && (
@@ -502,7 +502,7 @@ export function Services() {
             to="/professional/services/new"
             className="btn-gradient inline-flex items-center"
           >
-            <Plus className="h-5 w-5 mr-2" />
+            <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
             {t('services.addService')}
           </Link>
         )}
@@ -548,7 +548,7 @@ export function Services() {
                 setFilters(prev => ({ ...prev, professionalId: '' }));
                 navigate('/services');
               }}
-              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              className="px-3 sm:px-4 py-2 min-h-[44px] bg-white border border-gray-200 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors touch-manipulation"
             >
               {t('services.details.actions.viewAllServices')}
             </button>
@@ -612,9 +612,9 @@ export function Services() {
           )}
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="inline-flex items-center justify-center px-5 py-3 min-h-[52px] min-w-[52px] border-2 border-slate-200 rounded-xl text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-300 active:scale-95 transition-all duration-200 shadow-sm font-semibold touch-manipulation"
+            className="inline-flex items-center justify-center px-6 py-4 min-h-[56px] min-w-[56px] border-2 border-slate-200 rounded-xl text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-300 active:scale-95 transition-all duration-200 shadow-sm font-semibold touch-manipulation"
           >
-            <Filter className="h-5 w-5 mr-2" />
+            <Filter className="h-6 w-6 mr-2" />
             <span className="hidden sm:inline">{t('services.filters')}</span>
           </button>
           <select

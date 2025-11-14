@@ -410,32 +410,32 @@ export function Calendar() {
   const activeBookingsCount = bookings.filter(b => ['pendente', 'confirmado'].includes(b.status)).length;
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Calendário</h1>
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center bg-gray-100 rounded-lg p-1">
+    <div className="space-y-2 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
+        <h1 className="text-lg sm:text-3xl font-bold text-gray-900">Calendário</h1>
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-3 w-full sm:w-auto">
+          <div className="flex items-center bg-gray-100 rounded-lg p-0.5 sm:p-1">
             <button
               onClick={() => setViewMode('month')}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-all ${
+              className={`flex items-center space-x-1 sm:space-x-2 px-1.5 sm:px-4 py-1 sm:py-2 rounded-md transition-all ${
                 viewMode === 'month'
                   ? 'bg-white text-blue-600 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              <LayoutGrid className="h-4 w-4" />
-              <span className="text-sm font-medium">Mês</span>
+              <LayoutGrid className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="text-[11px] sm:text-sm font-medium">Mês</span>
             </button>
             <button
               onClick={() => setViewMode('day')}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-all ${
+              className={`flex items-center space-x-1 sm:space-x-2 px-1.5 sm:px-4 py-1 sm:py-2 rounded-md transition-all ${
                 viewMode === 'day'
                   ? 'bg-white text-blue-600 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              <List className="h-4 w-4" />
-              <span className="text-sm font-medium">Dia</span>
+              <List className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="text-[11px] sm:text-sm font-medium">Dia</span>
             </button>
           </div>
           <button
@@ -443,19 +443,19 @@ export function Calendar() {
               setShowArchived(!showArchived);
               setError('');
             }}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
+            className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-1 sm:py-2 rounded-lg transition-all ${
               showArchived
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
             }`}
             disabled={loading}
           >
-            {showArchived ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            <span className="text-sm font-medium">
-              {showArchived ? 'Ocultar Arquivadas' : 'Mostrar Arquivadas'}
+            {showArchived ? <EyeOff className="h-3 w-3 sm:h-4 sm:w-4" /> : <Eye className="h-3 w-3 sm:h-4 sm:w-4" />}
+            <span className="text-[11px] sm:text-sm font-medium">
+              {showArchived ? 'Ocultar' : 'Arquivadas'}
             </span>
             {!showArchived && archivedCount > 0 && (
-              <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full text-xs font-semibold">
+              <span className="bg-gray-200 text-gray-700 px-1 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-xs font-semibold">
                 {archivedCount}
               </span>
             )}
@@ -463,34 +463,33 @@ export function Calendar() {
           {archivedCount > 0 && (
             <button
               onClick={() => setShowCleanupModal(true)}
-              className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 transition-colors"
+              className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-1 sm:py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 transition-colors"
             >
-              <Trash2 className="h-4 w-4" />
-              <span className="text-sm font-medium">Limpar Dados</span>
+              <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="text-[11px] sm:text-sm font-medium">Limpar</span>
             </button>
           )}
         </div>
       </div>
 
       {!showArchived && viewMode === 'day' && (
-        <div className="space-y-3">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-center space-x-2">
-              <Archive className="h-5 w-5 text-blue-600" />
-              <p className="text-sm text-blue-800">
+        <div className="space-y-2 sm:space-y-3">
+          <div className="bg-blue-50 border border-blue-200 rounded-md sm:rounded-lg p-2 sm:p-4">
+            <div className="flex items-center space-x-1 sm:space-x-2">
+              <Archive className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" />
+              <p className="text-[10px] leading-tight sm:text-sm text-blue-800">
                 <strong>Exibindo apenas reservas ativas:</strong> {activeBookingsCount} {activeBookingsCount === 1 ? 'reserva' : 'reservas'} pendente{activeBookingsCount !== 1 ? 's' : ''} ou confirmada{activeBookingsCount !== 1 ? 's' : ''}.
                 {archivedCount > 0 && ` ${archivedCount} reserva${archivedCount !== 1 ? 's' : ''} arquivada${archivedCount !== 1 ? 's' : ''} oculta${archivedCount !== 1 ? 's' : ''}.`}
               </p>
             </div>
           </div>
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300 rounded-lg p-4">
-            <div className="flex items-start space-x-2">
-              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-green-900">
-                <p className="font-semibold mb-1">Bloqueio de Horários</p>
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300 rounded-md sm:rounded-lg p-2 sm:p-4">
+            <div className="flex items-start space-x-1 sm:space-x-2">
+              <CheckCircle className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <div className="text-[10px] leading-tight sm:text-sm text-green-900">
+                <p className="font-semibold mb-0.5">Bloqueio</p>
                 <p className="text-green-800">
-                  <strong className="text-green-900">Reservas confirmadas</strong> (azul) bloqueiam horários e impedem novas reservas.
-                  <strong className="text-green-900"> Reservas pendentes</strong> (amarelo) aguardam sua confirmação e NÃO bloqueiam disponibilidade para outros clientes.
+                  <strong>Confirmadas</strong> bloqueiam. <strong>Pendentes</strong> NÃO bloqueiam.
                 </p>
               </div>
             </div>
@@ -513,15 +512,13 @@ export function Calendar() {
       {viewMode === 'month' ? (
         <>
           {!showArchived && (
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300 rounded-lg p-4 mb-4">
-              <div className="flex items-start space-x-2">
-                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-green-900">
-                  <p className="font-semibold mb-1">Sistema de Bloqueio Inteligente</p>
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300 rounded-md sm:rounded-lg p-2 sm:p-4 mb-2 sm:mb-4">
+              <div className="flex items-start space-x-1 sm:space-x-2">
+                <CheckCircle className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                <div className="text-[10px] leading-tight sm:text-sm text-green-900">
+                  <p className="font-semibold mb-0.5">Bloqueio Inteligente</p>
                   <p className="text-green-800">
-                    Apenas <strong className="text-green-900">reservas confirmadas</strong> bloqueiam horários no calendário.
-                    <strong className="text-green-900"> Reservas pendentes</strong> aguardam sua confirmação e não impedem outros clientes de reservar o mesmo horário.
-                    Confirme ou cancele reservas pendentes para liberar ou bloquear os horários definitivamente.
+                    Só <strong>confirmadas</strong> bloqueiam horários.
                   </p>
                 </div>
               </div>
@@ -559,42 +556,42 @@ export function Calendar() {
           )}
         </>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-2 sm:p-6">
+        <div className="flex items-center justify-between mb-2 sm:mb-6">
           <button
             onClick={handlePreviousWeek}
-            className="p-2 hover:bg-blue-50 rounded-full transition-colors"
+            className="p-1 sm:p-2 hover:bg-blue-50 rounded-full transition-colors"
           >
-            <ChevronLeft className="h-5 w-5 text-gray-600" />
+            <ChevronLeft className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-gray-600" />
           </button>
-          <h2 className="text-lg font-semibold text-gray-900 capitalize">
+          <h2 className="text-xs sm:text-lg font-semibold text-gray-900 capitalize">
             {format(weekStart, 'MMMM yyyy', { locale: ptLocale })}
           </h2>
           <button
             onClick={handleNextWeek}
-            className="p-2 hover:bg-blue-50 rounded-full transition-colors"
+            className="p-1 sm:p-2 hover:bg-blue-50 rounded-full transition-colors"
           >
-            <ChevronRight className="h-5 w-5 text-gray-600" />
+            <ChevronRight className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-gray-600" />
           </button>
         </div>
 
-        <div className="grid grid-cols-7 gap-2 mb-4">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-2 mb-2 sm:mb-4">
           {weekDays.map((date) => (
             <button
               key={date.toISOString()}
               onClick={() => handleDateClick(date)}
               className={`
-                p-3 rounded-lg text-center transition-all
+                p-1 sm:p-3 rounded sm:rounded-lg text-center transition-all
                 ${isDateSelected(date)
                   ? 'bg-blue-600 text-white shadow-md scale-105'
                   : 'hover:bg-blue-50 hover:scale-102'
                 }
               `}
             >
-              <div className="text-sm font-medium">
+              <div className="text-[9px] sm:text-sm font-medium leading-tight">
                 {format(date, 'EEE', { locale: ptLocale })}
               </div>
-              <div className="text-lg font-semibold">
+              <div className="text-xs sm:text-lg font-semibold leading-tight">
                 {format(date, 'd')}
               </div>
             </button>
@@ -602,19 +599,19 @@ export function Calendar() {
         </div>
 
         {bookings.length === 0 && showArchived ? (
-          <div className="text-center py-12">
-            <Archive className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <p className="text-gray-600 font-medium">Nenhuma reserva arquivada neste dia</p>
-            <p className="text-gray-500 text-sm mt-2">Reservas concluídas e canceladas aparecerão aqui.</p>
+          <div className="text-center py-6 sm:py-12">
+            <Archive className="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-gray-400 mb-2 sm:mb-4" />
+            <p className="text-sm sm:text-base text-gray-600 font-medium">Nenhuma reserva arquivada neste dia</p>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1 sm:mt-2">Reservas concluídas e canceladas aparecerão aqui.</p>
           </div>
         ) : bookings.length === 0 ? (
-          <div className="text-center py-12">
-            <CalendarIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <p className="text-gray-600 font-medium">Nenhuma reserva neste dia</p>
-            <p className="text-gray-500 text-sm mt-2">O dia está livre para agendamentos.</p>
+          <div className="text-center py-6 sm:py-12">
+            <CalendarIcon className="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-gray-400 mb-2 sm:mb-4" />
+            <p className="text-sm sm:text-base text-gray-600 font-medium">Nenhuma reserva neste dia</p>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1 sm:mt-2">O dia está livre para agendamentos.</p>
           </div>
         ) : (
-          <div className="max-h-[600px] overflow-y-auto space-y-1 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+          <div className="max-h-[400px] sm:max-h-[600px] overflow-y-auto space-y-0.5 sm:space-y-1 pr-0.5 sm:pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
             {timeSlots.map((slot, index) => {
             const slotBookings = bookings.filter(booking => {
               const bookingTime = format(parseISO(booking.start_time), 'HH:mm');
@@ -631,34 +628,34 @@ export function Calendar() {
             return (
               <div key={slot.time}>
                 {showDivider && periodLabel && (
-                  <div className="flex items-center gap-3 my-3">
+                  <div className="flex items-center gap-2 sm:gap-3 my-2 sm:my-3">
                     <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">{periodLabel}</span>
+                    <span className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">{periodLabel}</span>
                     <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
                   </div>
                 )}
                 <div
-                  className={`flex items-center py-2.5 px-3 rounded-lg transition-colors group ${
+                  className={`flex items-center py-1.5 sm:py-2.5 px-2 sm:px-3 rounded-md sm:rounded-lg transition-colors group ${
                     isSlotBlocked
-                      ? 'bg-red-50/30 border-l-4 border-red-400'
+                      ? 'bg-red-50/30 border-l-2 sm:border-l-4 border-red-400'
                       : 'hover:bg-blue-50/50'
                   }`}
                 >
-                  <div className={`w-16 flex items-center text-sm ${
+                  <div className={`w-12 sm:w-16 flex items-center text-xs sm:text-sm ${
                     isSlotBlocked ? 'text-red-600' : 'text-gray-600'
                   }`}>
-                    <Clock className={`h-3.5 w-3.5 mr-1.5 ${
+                    <Clock className={`h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 sm:mr-1.5 ${
                       isSlotBlocked ? 'text-red-500' : 'text-gray-400'
                     }`} />
-                    <span className={`font-medium ${
+                    <span className={`font-medium text-[11px] sm:text-sm ${
                       isSlotBlocked ? 'font-bold' : ''
                     }`}>{slot.time}</span>
                     {isSlotBlocked && (
-                      <span className="ml-1 text-[10px] text-red-600 font-bold">🔒</span>
+                      <span className="ml-0.5 sm:ml-1 text-[9px] sm:text-[10px] text-red-600 font-bold">🔒</span>
                     )}
                   </div>
 
-                  <div className="flex-1 ml-3">
+                  <div className="flex-1 ml-2 sm:ml-3">
                     {slotBookings.length > 0 ? (
                       <div className="space-y-1.5">
                         {slotBookings.map(booking => {
@@ -672,7 +669,7 @@ export function Calendar() {
                           <div
                             key={booking.id}
                             onClick={() => handleBookingClick(booking)}
-                            className={`flex items-center justify-between py-2.5 px-3 rounded-lg shadow-sm hover:shadow-md cursor-pointer border transition-all duration-300 ease-in-out relative ${
+                            className={`flex items-center justify-between py-2 sm:py-2.5 px-2 sm:px-3 rounded-lg shadow-sm hover:shadow-md cursor-pointer border transition-all duration-300 ease-in-out relative ${
                               isArchived
                                 ? 'booking-archived border-gray-300 bg-gray-50'
                                 : isConfirmed
@@ -683,43 +680,43 @@ export function Calendar() {
                             }`}
                           >
                             {isConfirmed && (
-                              <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-red-500 rounded-full animate-pulse" title="Horário bloqueado para outros clientes"></div>
+                              <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-red-500 rounded-full animate-pulse" title="Horário bloqueado para outros clientes"></div>
                             )}
                             {isPending && (
-                              <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-yellow-500 rounded-full" title="Aguarda confirmação - Horário ainda disponível"></div>
+                              <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-yellow-500 rounded-full" title="Aguarda confirmação - Horário ainda disponível"></div>
                             )}
-                            <div className="flex items-center space-x-3 flex-1">
+                            <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
                               {booking.client?.avatar_url ? (
                                 <img
                                   src={booking.client.avatar_url}
                                   alt={clientName}
-                                  className="h-8 w-8 rounded-full object-cover"
+                                  className="h-7 w-7 sm:h-8 sm:w-8 rounded-full object-cover flex-shrink-0"
                                 />
                               ) : (
-                                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                                <div className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                                   hasClientData ? 'bg-blue-100' : 'bg-gray-200'
                                 }`}>
-                                  <User className={`h-4 w-4 ${hasClientData ? 'text-blue-600' : 'text-gray-400'}`} />
+                                  <User className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${hasClientData ? 'text-blue-600' : 'text-gray-400'}`} />
                                 </div>
                               )}
-                              <div>
-                                <h3 className="font-medium text-gray-900 text-sm">
+                              <div className="min-w-0 flex-1">
+                                <h3 className="font-medium text-gray-900 text-xs sm:text-sm truncate">
                                   {booking.service.title}
                                 </h3>
-                                <p className={`text-xs ${hasClientData ? 'text-gray-500' : 'text-gray-400 italic'}`}>
+                                <p className={`text-xs ${hasClientData ? 'text-gray-500' : 'text-gray-400 italic'} truncate`}>
                                   {clientName}
                                 </p>
                               </div>
                             </div>
-                            <div className="flex items-center space-x-3 flex-shrink-0">
-                              <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
+                            <div className="flex items-center space-x-1.5 sm:space-x-3 flex-shrink-0">
+                              <span className={`px-1.5 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${getStatusColor(booking.status)}`}>
                                 {booking.status}
                               </span>
                               <div className="text-right">
-                                <p className="text-sm font-semibold text-blue-600">
+                                <p className="text-xs sm:text-sm font-semibold text-blue-600">
                                   {formatCurrency(booking.service.price)}
                                 </p>
-                                <p className="text-xs text-gray-500">
+                                <p className="text-[10px] sm:text-xs text-gray-500">
                                   {booking.service.duration}
                                 </p>
                               </div>

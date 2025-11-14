@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Clock, Euro, X, Phone, Plus, Trash, GripVertical, CheckCircle, Users } from 'lucide-react';
+import { X, Plus, Trash, CheckCircle, Users } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { supabase } from '../../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
@@ -790,17 +790,14 @@ export function ServiceForm() {
           <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700">
             Número do WhatsApp
           </label>
-          <div className="mt-1 relative rounded-md shadow-sm">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Phone className="h-5 w-5 text-gray-400" />
-            </div>
+          <div className="mt-1">
             <input
               type="text"
               id="whatsapp"
               required
               value={formData.whatsapp_number}
               onChange={(e) => setFormData({ ...formData, whatsapp_number: e.target.value })}
-              className="input-glow block w-full pl-10 rounded-md border border-gray-300 px-3 py-2 sm:text-sm"
+              className="input-glow block w-full rounded-md border border-gray-300 px-3 py-2 sm:text-sm"
               placeholder="+351912345678"
             />
           </div>
@@ -879,9 +876,6 @@ export function ServiceForm() {
                         Preço (€) *
                       </label>
                       <div className="relative rounded-md shadow-sm">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <span className="text-gray-500 text-sm">€</span>
-                        </div>
                         <input
                           type="number"
                           min="0"
@@ -889,7 +883,7 @@ export function ServiceForm() {
                           value={variant.price}
                           onChange={(e) => handleVariantChange(variant.id, 'price', e.target.value)}
                           placeholder="11,68"
-                          className="input-glow block w-full pl-8 rounded-md border border-gray-300 px-3 py-2 text-sm"
+                          className="input-glow block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                         />
                       </div>
                     </div>
@@ -899,13 +893,10 @@ export function ServiceForm() {
                         Duração
                       </label>
                       <div className="relative rounded-md shadow-sm">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Clock className="h-4 w-4 text-gray-400" />
-                        </div>
                         <select
                           value={variant.duration}
                           onChange={(e) => handleVariantChange(variant.id, 'duration', e.target.value)}
-                          className="input-glow block w-full pl-9 rounded-md border border-gray-300 px-3 py-2 text-sm"
+                          className="input-glow block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                         >
                           <option value="15">15 min</option>
                           <option value="30">30 min</option>
@@ -946,10 +937,7 @@ export function ServiceForm() {
             <p className="text-xs text-gray-500 mt-1">
               {formData.variants.length > 0 ? 'Usado como fallback' : 'Preço principal do serviço'}
             </p>
-            <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Euro className="h-5 w-5 text-gray-400" />
-              </div>
+            <div className="mt-1">
               <input
                 type="number"
                 id="price"
@@ -958,7 +946,7 @@ export function ServiceForm() {
                 step="0.01"
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                className="input-glow block w-full pl-10 rounded-md border border-gray-300 px-3 py-2 sm:text-sm"
+                className="input-glow block w-full rounded-md border border-gray-300 px-3 py-2 sm:text-sm"
                 placeholder="0.00"
               />
             </div>
@@ -971,16 +959,13 @@ export function ServiceForm() {
             <p className="text-xs text-gray-500 mt-1">
               {formData.variants.length > 0 ? 'Usado como fallback' : 'Duração principal do serviço'}
             </p>
-            <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Clock className="h-5 w-5 text-gray-400" />
-              </div>
+            <div className="mt-1">
               <select
                 id="duration"
                 required
                 value={formData.duration}
                 onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                className="input-glow block w-full pl-10 rounded-md border border-gray-300 px-3 py-2 sm:text-sm"
+                className="input-glow block w-full rounded-md border border-gray-300 px-3 py-2 sm:text-sm"
               >
                 <option value="30">30 minutos</option>
                 <option value="45">45 minutos</option>

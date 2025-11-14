@@ -47,7 +47,7 @@ export function Cookies() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
       <div className="max-w-5xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h1 className="font-abril text-5xl md:text-6xl font-semibold text-gray-900 mb-6 leading-tight">
+          <h1 className="font-abril text-3xl md:text-6xl font-semibold text-gray-900 mb-6 leading-tight">
             Política de Cookies
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
@@ -76,7 +76,7 @@ export function Cookies() {
         </div>
 
         <section className="mb-16">
-          <h2 className="font-abril text-4xl font-semibold text-gray-900 text-center mb-12">
+          <h2 className="font-abril text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-900 text-center mb-12">
             Tipos de Cookies
           </h2>
           <div className="space-y-6">
@@ -120,7 +120,7 @@ export function Cookies() {
         </section>
 
         <section className="mb-16">
-          <h2 className="font-abril text-4xl font-semibold text-gray-900 text-center mb-12">
+          <h2 className="font-abril text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-900 text-center mb-12">
             Serviços de Terceiros
           </h2>
           <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
@@ -153,7 +153,7 @@ export function Cookies() {
         </section>
 
         <section className="mb-16">
-          <h2 className="font-abril text-4xl font-semibold text-gray-900 text-center mb-8">
+          <h2 className="font-abril text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-900 text-center mb-8">
             Gestão de Cookies
           </h2>
           <div className="grid md:grid-cols-2 gap-6">
@@ -189,7 +189,7 @@ export function Cookies() {
 
         <section className="mb-16">
           <GlowCard glowColor="green" customSize={true} className="!p-8">
-            <h2 className="font-abril text-3xl font-semibold text-gray-900 mb-4">
+            <h2 className="font-abril text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900 mb-4">
               Duração dos Cookies
             </h2>
             <div className="grid md:grid-cols-2 gap-6">
