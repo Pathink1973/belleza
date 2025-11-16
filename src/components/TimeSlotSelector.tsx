@@ -1,4 +1,4 @@
-import { Clock, Sunrise, Sun, Moon, Sparkles, Users, AlertTriangle } from 'lucide-react';
+import { Clock, Sunrise, Sun, Moon, Users, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getCapacityColorClasses, getCapacityLabel } from '../utils/availability';
 
@@ -117,16 +117,18 @@ export function TimeSlotSelector({
   }, [timeSlots, totalServiceCapacity]);
 
   const filteredSlots = getFilteredSlots();
-  // CRITICAL FIX: Count slots with actual available capacity
-  const availableCount = filteredSlots.filter(s => {
-    if (s.availableProfessionals && s.availableProfessionals.length > 0) {
-      return true;
+  // CRITICAL FIX: Sum TOTAL available spots (professionals × time slots)
+  const availableCount = filteredSlots.reduce((total, slot) => {
+    // Count available professionals in this slot
+    if (slot.availableProfessionals && slot.availableProfessionals.length > 0) {
+      return total + slot.availableProfessionals.length;
     }
-    if (s.availableCapacity !== undefined && s.availableCapacity > 0) {
-      return true;
+    if (slot.availableCapacity !== undefined && slot.availableCapacity > 0) {
+      return total + slot.availableCapacity;
     }
-    return s.isAvailable;
-  }).length;
+    // If slot is marked as available but no capacity info, count as 1
+    return slot.isAvailable ? total + 1 : total;
+  }, 0);
 
   return (
     <div className="space-y-6">
@@ -143,9 +145,9 @@ export function TimeSlotSelector({
           </div>
         </div>
         <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-cyan-50 px-5 py-3 rounded-xl border border-blue-200 shadow-sm">
-          <Sparkles className="h-5 w-5 text-blue-600" />
+          <Users className="h-5 w-5 text-blue-600" />
+          <span className="text-sm text-blue-700 font-medium">Vagas:</span>
           <span className="text-lg font-bold text-blue-900">{availableCount}</span>
-          <span className="text-sm text-blue-700 font-medium">disponíveis</span>
         </div>
       </div>
 
@@ -346,7 +348,7 @@ export function TimeSlotSelector({
               <div className="relative">
                 <div className="absolute inset-0 bg-white rounded-full animate-ping opacity-40" />
                 <div className="relative h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-white flex items-center justify-center shadow-lg">
-                  <Sparkles className="h-6 w-6 sm:h-7 sm:w-7 text-green-600" />
+                  <CheckCircle className="h-6 w-6 sm:h-7 sm:w-7 text-green-600" />
                 </div>
               </div>
             </div>
