@@ -26,6 +26,7 @@ import {
   List
 } from 'lucide-react';
 import { formatCurrency } from '../utils/currency';
+import { confirmBookingWithCapacityCheck } from '../utils/availability';
 
 interface TimeSlot {
   time: string;
@@ -306,23 +307,48 @@ export function Calendar() {
 
   const handleBookingAction = async (bookingId: string, newStatus: Booking['status']) => {
     try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ status: newStatus })
-        .eq('id', bookingId);
+      setError('');
+      setSuccess('');
 
-      if (error) throw error;
+      if (newStatus === 'confirmado') {
+        console.log('[CONFIRMATION] Confirming booking with capacity check:', bookingId);
 
-      const statusMessage = newStatus === 'concluído' ? 'concluído e arquivado' : newStatus === 'confirmado' ? 'confirmado' : 'cancelado e arquivado';
-      setSuccess(`Agendamento ${statusMessage} com sucesso`);
+        const result = await confirmBookingWithCapacityCheck(bookingId);
+
+        if (!result.success) {
+          setError(result.message);
+          console.error('[CONFIRMATION] Cannot confirm booking:', result.message);
+          return;
+        }
+
+        if (result.assignedTo) {
+          setSuccess(`Agendamento confirmado! Atribuído a: ${result.assignedTo}`);
+        } else {
+          setSuccess('Agendamento confirmado com sucesso!');
+        }
+
+        console.log('[CONFIRMATION] Booking confirmed successfully');
+      } else {
+        const { error } = await supabase
+          .from('bookings')
+          .update({ status: newStatus })
+          .eq('id', bookingId);
+
+        if (error) throw error;
+
+        const statusMessage = newStatus === 'concluído' ? 'concluído' : 'cancelado';
+        setSuccess(`Agendamento ${statusMessage} com sucesso`);
+      }
+
       setSelectedBooking(null);
 
       setTimeout(() => {
         fetchBookings();
       }, 300);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error updating booking:', err);
-      setError('Erro ao atualizar agendamento');
+      const errorMessage = err?.message || 'Erro ao atualizar agendamento';
+      setError(errorMessage);
     }
   };
 

@@ -10,6 +10,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { BookingEditModal } from '../components/BookingEditModal';
 import { BookingCancelModal } from '../components/BookingCancelModal';
 import { ReviewEditModal } from '../components/ReviewEditModal';
+import { confirmBookingWithCapacityCheck } from '../utils/availability';
 
 interface Booking {
   id: string;
@@ -221,14 +222,31 @@ export function Bookings() {
 
   const handleStatusUpdate = async (bookingId: string, newStatus: Booking['status']) => {
     try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ status: newStatus })
-        .eq('id', bookingId);
+      if (newStatus === 'confirmado') {
+        const result = await confirmBookingWithCapacityCheck(bookingId);
 
-      if (error) throw error;
+        if (!result.success) {
+          setError(result.message);
+          setTimeout(() => setError(''), 5000);
+          return;
+        }
 
-      setSuccess(t('bookings.success.statusUpdate'));
+        if (result.assignedTo) {
+          setSuccess(`Reserva confirmada! Atribuído a: ${result.assignedTo}`);
+        } else {
+          setSuccess(result.message || 'Reserva confirmada com sucesso!');
+        }
+      } else {
+        const { error } = await supabase
+          .from('bookings')
+          .update({ status: newStatus })
+          .eq('id', bookingId);
+
+        if (error) throw error;
+
+        setSuccess(t('bookings.success.statusUpdate'));
+      }
+
       setTimeout(() => setSuccess(''), 3000);
       fetchBookings();
     } catch (err) {
@@ -243,20 +261,31 @@ export function Bookings() {
     }
 
     try {
-      const { error } = await supabase
+      console.log('Tentando eliminar reserva:', bookingId);
+      const { data, error } = await supabase
         .from('bookings')
         .delete()
         .eq('id', bookingId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro detalhado ao eliminar:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw error;
+      }
 
+      console.log('Reserva eliminada com sucesso:', data);
       setSuccess('Reserva eliminada com sucesso');
       setTimeout(() => setSuccess(''), 3000);
       fetchBookings();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error deleting booking:', err);
-      setError('Erro ao eliminar reserva');
-      setTimeout(() => setError(''), 3000);
+      const errorMessage = err?.message || 'Erro desconhecido ao eliminar reserva';
+      setError(`Erro ao eliminar: ${errorMessage}`);
+      setTimeout(() => setError(''), 5000);
     }
   };
 

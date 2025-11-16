@@ -10,6 +10,7 @@ import { ServiceVariant, ServiceProfessional } from '../../types/service';
 import { formatCurrency } from '../../utils/currency';
 import { parseDurationToMinutes } from '../../utils/date';
 import { TimeSlotSelector } from '../../components/TimeSlotSelector';
+import { BookingConfirmationModal } from '../../components/BookingConfirmationModal';
 
 interface Service {
   id: string;
@@ -38,6 +39,9 @@ interface BookingFormData {
 interface TimeSlot {
   time: string;
   isAvailable: boolean;
+  totalCapacity?: number;
+  availableCapacity?: number;
+  utilizationPercentage?: number;
   availableProfessionals: {
     unique_id: string;
     profile_id: string | null;
@@ -68,12 +72,20 @@ export function BookingForm() {
   });
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [isDayBlocked, setIsDayBlocked] = useState(false);
+  const [blockedReason, setBlockedReason] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [showProfessionalModal, setShowProfessionalModal] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null);
+  const [totalServiceCapacity, setTotalServiceCapacity] = useState(1);
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [bookingErrorMessage, setBookingErrorMessage] = useState('');
+  const [confirmedBookingDetails, setConfirmedBookingDetails] = useState<any>(null);
 
   useEffect(() => {
     if (!serviceId) {
@@ -149,6 +161,10 @@ export function BookingForm() {
 
         setService({ ...data, team: processedTeam, variants: variantsData || [] });
 
+        const calculatedCapacity = processedTeam.length > 0 ? processedTeam.length : 1;
+        setTotalServiceCapacity(calculatedCapacity);
+        console.log('=== TOTAL SERVICE CAPACITY SET ===', calculatedCapacity);
+
         if (variantId && variantsData) {
           const variant = variantsData.find((v: ServiceVariant) => v.id === variantId);
           if (variant) {
@@ -172,215 +188,165 @@ export function BookingForm() {
       return;
     }
 
-    console.log('=== LOADING TIME SLOTS (AGGREGATED) ===');
+    console.log('=== LOADING TIME SLOTS (REALTIME DATABASE) ===');
     console.log('Date:', formData.date);
+    console.log('Service ID:', service.id);
 
-    const loadTimeSlots = async () => {
+    const loadTimeSlots = async (isRetry = false) => {
       setLoadingSlots(true);
+      setError('');
+
+      if (!isRetry) {
+        setRetryCount(0);
+      }
+
       try {
-        // Get all professionals for this service
-        // PRIORITY: Use service.team if available (includes all team members)
-        let allProfessionals: any[] = [];
+        const dateStr = formData.date;
 
-        if (service.team && service.team.length > 0) {
-          // Use the processed team data which includes both primary and collaborators
-          allProfessionals = service.team.map(member => ({
-            unique_id: member.unique_id,
-            profile_id: member.profile_id || null,
-            team_member_id: member.team_member_id || null,
-            full_name: member.name,
-            avatar_url: member.imageUrl,
-            is_primary: member.is_primary || false
-          }));
-        } else if (service.service_professionals && service.service_professionals.length > 0) {
-          allProfessionals = service.service_professionals.map(sp => ({
-            unique_id: sp.profile_id,
-            profile_id: sp.profile_id,
-            team_member_id: null,
-            full_name: sp.profile?.full_name || '',
-            avatar_url: sp.profile?.avatar_url || null,
-            is_primary: sp.is_primary
-          }));
-        } else {
-          // Single professional service
-          allProfessionals = [{
-            unique_id: service.professional_id,
-            profile_id: service.professional_id,
-            team_member_id: null,
-            full_name: service.professional.full_name,
-            avatar_url: service.professional.avatar_url,
-            is_primary: true
-          }];
+        // CRITICAL: Usar a função RPC do Supabase que calcula disponibilidade em tempo real
+        console.log('[REALTIME] Fetching availability matrix for:', service.id, dateStr);
+
+        const { data: dailyMatrix, error: matrixError } = await supabase.rpc(
+          'get_service_team_availability_matrix',
+          {
+            p_service_id: service.id,
+            p_date: dateStr
+          }
+        );
+
+        if (matrixError) {
+          console.error('[REALTIME] Error fetching availability matrix:', matrixError);
+          throw matrixError;
         }
 
-        console.log('=== ALL PROFESSIONALS FOR AVAILABILITY CHECK ===');
-        console.log('Total:', allProfessionals.length);
-        allProfessionals.forEach(p => {
-          console.log(`- ${p.full_name}: unique_id=${p.unique_id}, profile_id=${p.profile_id}, team_member_id=${p.team_member_id}, is_primary=${p.is_primary}`);
-        });
+        console.log('[REALTIME] Daily matrix loaded:', dailyMatrix);
 
-        // Fetch bookings for ALL professionals
-        const startOfDayTime = startOfDay(new Date(formData.date));
-        const endOfDayTime = new Date(startOfDayTime);
-        endOfDayTime.setDate(endOfDayTime.getDate() + 1);
-
-        // Collect all IDs we need to check: profile_ids and team_member_ids
-        const professionalIds = allProfessionals.map(p => p.profile_id).filter(Boolean);
-        const teamMemberIds = allProfessionals.map(p => p.team_member_id).filter(Boolean);
-
-        let existingBookings: any[] = [];
-
-        // Fetch bookings for this service on this date
-        // IMPORTANT: Only count "confirmado" bookings as they block time slots
-        // "pendente" bookings do not block availability until confirmed by professional
-        const { data: allServiceBookings, error: bookingsError } = await supabase
-          .from('bookings')
-          .select('start_time, end_time, professional_id, team_member_id')
-          .eq('service_id', service.id)
-          .eq('status', 'confirmado')  // CRITICAL: Only confirmed bookings block slots
-          .gte('start_time', startOfDayTime.toISOString())
-          .lt('start_time', endOfDayTime.toISOString());
-
-        if (bookingsError) throw bookingsError;
-        existingBookings = allServiceBookings || [];
-
-        // CRITICAL: Fetch blocked time slots for ALL professionals
-        // Blocked time slots prevent ANY booking, regardless of professional availability
-        const { data: blockedTimeSlots, error: blockedError } = await supabase
-          .from('blocked_time_slots')
-          .select('professional_id, start_time, end_time')
-          .in('professional_id', professionalIds)
-          .eq('date', formData.date);
-
-        if (blockedError) {
-          console.error('Error fetching blocked time slots:', blockedError);
-        }
-
-        console.log('Blocked time slots for date:', blockedTimeSlots || []);
-
-        console.log('All professionals to check:', allProfessionals);
-        console.log('Professional IDs:', professionalIds);
-        console.log('Team Member IDs:', teamMemberIds);
-        console.log('Existing bookings for service:', existingBookings);
-
-        // Generate time slots with availability per professional
+        // Converter matriz para formato TimeSlot
         const slots: TimeSlot[] = [];
-        const durationInMinutes = selectedVariant
-          ? parseDurationToMinutes(selectedVariant.duration)
-          : parseDurationToMinutes(service.duration);
 
-        for (let hour = 9; hour <= 19; hour++) {
-          for (let minute = 0; minute < 60; minute += 30) {
-            const slotTime = format(setMinutes(setHours(new Date(formData.date), hour), minute), 'HH:mm');
-            const slotStart = new Date(`${formData.date}T${slotTime}`);
-            const slotEnd = new Date(slotStart.getTime() + durationInMinutes * 60000);
+        if (dailyMatrix && Array.isArray(dailyMatrix)) {
+          for (const matrixSlot of dailyMatrix) {
+            const timeOnly = matrixSlot.time_slot?.substring(0, 5) || matrixSlot.slot_time?.substring(0, 5);
 
-            // Check which professionals are available for this slot
-            // Only professionals WITHOUT confirmed bookings OR blocked time slots are available
-            const availableProfessionals = allProfessionals.filter(professional => {
-              // Check for booking conflicts
-              const hasConflict = existingBookings?.some(booking => {
-                // Determine if this booking belongs to the current professional
-                let isThisProfessional = false;
+            if (!timeOnly) {
+              console.warn('[REALTIME] Slot sem horário:', matrixSlot);
+              continue;
+            }
 
-                // CRITICAL: Proper professional matching logic
-                // For primary professionals (service owner): match by professional_id with NULL team_member_id
-                if (professional.is_primary && professional.profile_id) {
-                  isThisProfessional = (
-                    booking.professional_id === professional.profile_id &&
-                    booking.team_member_id === null
-                  );
-                }
-                // For team members (collaborators): match by team_member_id
-                else if (!professional.is_primary && professional.team_member_id) {
-                  isThisProfessional = (
-                    booking.team_member_id === professional.team_member_id
-                  );
-                }
+            // Buscar detalhes completos do slot (com lista de profissionais)
+            const [hours, minutes] = timeOnly.split(':').map(Number);
+            const startTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
 
-                if (!isThisProfessional) return false;
+            let endHours = hours;
+            let endMinutes = minutes + 30;
+            if (endMinutes >= 60) {
+              endHours += 1;
+              endMinutes -= 60;
+            }
+            const endTime = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}:00`;
 
-                // Check time conflict (interval overlap)
-                // Two intervals overlap if: start1 < end2 AND start2 < end1
-                const bookingStart = new Date(booking.start_time);
-                const bookingEnd = new Date(booking.end_time);
-                const timeConflict = (
-                  (isAfter(slotStart, bookingStart) && isBefore(slotStart, bookingEnd)) ||
-                  (isAfter(slotEnd, bookingStart) && isBefore(slotEnd, bookingEnd)) ||
-                  (isBefore(slotStart, bookingStart) && isAfter(slotEnd, bookingEnd))
-                );
+            const { data: slotDetails, error: detailsError } = await supabase.rpc(
+              'get_available_professionals_for_slot',
+              {
+                p_service_id: service.id,
+                p_date: dateStr,
+                p_start_time: startTime,
+                p_end_time: endTime
+              }
+            );
 
-                return timeConflict;
-              });
+            if (detailsError) {
+              console.error('[REALTIME] Error fetching slot details:', detailsError);
+            }
 
-              // Check for blocked time slots
-              const hasBlockedSlot = blockedTimeSlots?.some(blockedSlot => {
-                // Check if this blocked slot belongs to current professional
-                const isThisProfessional = (
-                  (professional.is_primary && professional.profile_id === blockedSlot.professional_id) ||
-                  (!professional.is_primary && professional.profile_id === blockedSlot.professional_id)
-                );
+            const availableCount = matrixSlot.available_count ?? matrixSlot.available ?? 0;
+            const totalCount = matrixSlot.total_capacity ?? matrixSlot.total ?? 0;
+            const professionals = slotDetails || [];
 
-                if (!isThisProfessional) return false;
+            console.log(`[SLOT ${timeOnly}] Matrix: ${availableCount}/${totalCount}, Professionals: ${professionals.length}, IsAvailable: ${availableCount > 0}`);
 
-                // Parse blocked time slot times (format: HH:MM:SS)
-                const blockedStartTime = blockedSlot.start_time.substring(0, 5); // Get HH:MM
-                const blockedEndTime = blockedSlot.end_time.substring(0, 5);
-
-                // Check if slot overlaps with blocked time
-                const slotTimeStr = format(slotStart, 'HH:mm');
-                const slotEndTimeStr = format(slotEnd, 'HH:mm');
-
-                const timeConflict = (
-                  (slotTimeStr >= blockedStartTime && slotTimeStr < blockedEndTime) ||
-                  (slotEndTimeStr > blockedStartTime && slotEndTimeStr <= blockedEndTime) ||
-                  (slotTimeStr <= blockedStartTime && slotEndTimeStr >= blockedEndTime)
-                );
-
-                return timeConflict;
-              });
-
-              // Professional is available if they have NO conflicts (bookings or blocked slots)
-              return !hasConflict && !hasBlockedSlot;
-            });
-
-            // Slot is available only if at least ONE professional is free
-            // If all professionals have confirmed bookings, slot is blocked
             slots.push({
-              time: slotTime,
-              isAvailable: availableProfessionals.length > 0,  // Block if no professionals available
-              availableProfessionals
+              time: timeOnly,
+              isAvailable: availableCount > 0,
+              totalCapacity: totalCount,
+              availableCapacity: availableCount,
+              utilizationPercentage: totalCount > 0 ? Math.round(((totalCount - availableCount) / totalCount) * 100) : 0,
+              availableProfessionals: professionals,
+              blockedReason: availableCount === 0 ? 'Horário já esgotado - 0 vagas disponíveis' : undefined
             });
           }
         }
 
-        console.log('=== SLOTS GENERATED ===');
-        console.log('Total slots:', slots.length);
-        const sampleSlot = slots.find(s => s.isAvailable);
-        if (sampleSlot) {
-          console.log('Sample available slot:', {
-            time: sampleSlot.time,
-            availableProfessionals: sampleSlot.availableProfessionals.map(p => ({
-              name: p.full_name,
-              unique_id: p.unique_id,
-              is_primary: p.is_primary
-            }))
-          });
+        console.log('[REALTIME] Slots generated:', slots.length);
+        console.log('[REALTIME] Available slots:', slots.filter(s => s.isAvailable).length);
+        console.log('[REALTIME] Fully booked slots:', slots.filter(s => !s.isAvailable).length);
+
+        // Verificar se o dia inteiro está bloqueado
+        const allSlotsBlocked = slots.every(s => !s.isAvailable);
+        if (allSlotsBlocked && slots.length > 0) {
+          setIsDayBlocked(true);
+          setBlockedReason('Dia completamente esgotado - Todos os horários já têm reservas confirmadas');
+        } else {
+          setIsDayBlocked(false);
+          setBlockedReason('');
         }
-        console.log('Available slots:', slots.filter(s => s.isAvailable).length);
+
         setTimeSlots(slots);
-      } catch (err) {
-        console.error('Error loading time slots:', err);
-        setError('Error loading available time slots');
+      } catch (err: any) {
+        console.error('[AVAILABILITY] Error loading time slots:', err);
+        console.error('[AVAILABILITY] Error details:', {
+          message: err?.message,
+          code: err?.code,
+          retry: retryCount
+        });
+
+        // CRITICAL: Never block UI with generic error
+        // Instead, implement exponential backoff retry
+        if (retryCount < 3) {
+          const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+          console.log(`[AVAILABILITY] Retrying in ${delay}ms (attempt ${retryCount + 1}/3)`);
+
+          setTimeout(() => {
+            setRetryCount(prev => prev + 1);
+            loadTimeSlots(true);
+          }, delay);
+        } else {
+          // After 3 retries, show error message
+          console.error('[REALTIME] Max retries reached');
+          setError('Erro ao carregar disponibilidade. Por favor, tente novamente ou contacte o suporte.');
+          setTimeSlots([]);
+        }
       } finally {
         setLoadingSlots(false);
       }
     };
 
     loadTimeSlots();
+
+    const bookingsChannel = supabase
+      .channel(`bookings_${service.id}_${formData.date}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings',
+          filter: `service_id=eq.${service.id}`
+        },
+        (payload) => {
+          console.log('Booking change detected:', payload);
+          loadTimeSlots();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      bookingsChannel.unsubscribe();
+    };
   }, [service, formData.date, selectedVariant]);
 
   const handleTimeSlotClick = (slot: TimeSlot) => {
+    // CRITICAL FIX: Only block if there are NO professionals available (0/3)
     if (!slot.isAvailable || !slot.availableProfessionals || slot.availableProfessionals.length === 0) {
       return;
     }
@@ -406,13 +372,33 @@ export function BookingForm() {
         return;
       } else {
         // Pre-selected professional is NOT available for this time slot
+        // BUT there are other professionals available (1/3, 2/3, etc)
+        // SOLUTION: Show the modal to let user choose from available professionals
         const preSelectedName = service.service_professionals?.find(sp => sp.profile_id === formData.selectedProfessionalId)?.profile?.full_name ||
                                 service.team?.find((m: any) => m.unique_id === formData.selectedProfessionalId)?.name ||
                                 'O profissional selecionado';
 
-        setError(`${preSelectedName} não está disponível às ${slot.time}. Por favor, escolha outro horário ou outro profissional.`);
+        setError(`${preSelectedName} não está disponível às ${slot.time}. Por favor, escolha um dos ${slot.availableProfessionals.length} profissionais disponíveis.`);
         setTimeout(() => setError(''), 5000);
-        return;
+
+        // CRITICAL FIX: Instead of blocking, show available professionals
+        if (slot.availableProfessionals.length === 1) {
+          // Auto-select the only available professional
+          setFormData(prev => ({
+            ...prev,
+            time: slot.time,
+            selectedProfessionalId: slot.availableProfessionals[0].unique_id
+          }));
+          setSuccess(`${slot.availableProfessionals[0].full_name} foi selecionado automaticamente para ${slot.time}`);
+          setTimeout(() => setSuccess(''), 3000);
+          setTimeout(() => setError(''), 100);
+          return;
+        } else {
+          // Show modal to choose from multiple available professionals
+          setFormData(prev => ({ ...prev, time: slot.time }));
+          setShowProfessionalModal(true);
+          return;
+        }
       }
     }
 
@@ -452,6 +438,7 @@ export function BookingForm() {
     setSuccess('');
     setLoading(true);
 
+    // LAYER 1: Basic field validation
     if (!formData.time) {
       setError('Por favor, selecione um horário disponível antes de continuar.');
       setLoading(false);
@@ -466,6 +453,15 @@ export function BookingForm() {
       return;
     }
 
+    // LAYER 2: Check if day is blocked
+    if (isDayBlocked) {
+      setError(`Este dia está bloqueado: ${blockedReason}. Por favor, selecione outra data.`);
+      setLoading(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // LAYER 3: Verify slot availability from local state
     const selectedSlot = timeSlots.find(slot => slot.time === formData.time);
     if (selectedSlot && !selectedSlot.isAvailable) {
       setError('O horário selecionado já não está disponível. Por favor, escolha outro horário.');
@@ -506,8 +502,10 @@ export function BookingForm() {
         : parseDurationToMinutes(service.duration);
       const endTime = new Date(startTime.getTime() + durationInMinutes * 60000);
 
-      // DOUBLE-CHECK: Verify professional is still available before creating booking
+      // LAYER 4: DOUBLE-CHECK in database before creating booking
       // This prevents race conditions where another client books the same slot
+      // between selection and submission
+      console.log('[VALIDATION] Layer 4: Double-checking availability in database...');
       const { data: conflictCheck, error: conflictError } = await supabase
         .from('bookings')
         .select('id')
@@ -637,14 +635,20 @@ export function BookingForm() {
 
       if (bookingError) throw bookingError;
 
-      setSuccess('Reserva criada com sucesso! Aguarde a confirmação do profissional.');
-      setTimeout(() => {
-        if (profile) {
-          navigate('/reviews');
-        } else {
-          navigate('/services');
-        }
-      }, 3000);
+      setConfirmedBookingDetails({
+        serviceName: service.title,
+        professionalName: selectedProfessionalData?.full_name || service.professional.full_name,
+        date: formData.date,
+        time: formData.time,
+        duration: selectedVariant ? selectedVariant.duration : service.duration,
+        price: selectedVariant ? formatCurrency(selectedVariant.price) : `${service.price}€`,
+        variantName: selectedVariant?.name
+      });
+
+      setBookingSuccess(true);
+      setShowConfirmationModal(true);
+      setError('');
+      setSuccess('');
     } catch (err: any) {
       console.error('Error creating booking:', err);
 
@@ -659,6 +663,9 @@ export function BookingForm() {
       }
 
       setError(errorMessage);
+      setBookingSuccess(false);
+      setBookingErrorMessage(errorMessage);
+      setShowConfirmationModal(true);
     } finally {
       setLoading(false);
     }
@@ -990,29 +997,79 @@ export function BookingForm() {
           />
         </div>
 
-        {loadingSlots ? (
+        {isDayBlocked ? (
+          <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl border-2 border-red-300 p-6 shadow-inner">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="h-12 w-12 rounded-full bg-red-500 flex items-center justify-center shadow-lg">
+                <AlertCircle className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-red-900">Dia Bloqueado</h3>
+                <p className="text-sm text-red-700">Este dia está indisponível para agendamentos</p>
+              </div>
+            </div>
+            <div className="bg-white bg-opacity-50 rounded-lg p-4 mb-4">
+              <p className="text-sm text-red-800">
+                <span className="font-bold">Motivo:</span> {blockedReason || 'Dia indisponível'}
+              </p>
+            </div>
+            <p className="text-xs text-red-600">
+              Por favor, selecione outra data para continuar com a sua reserva.
+            </p>
+          </div>
+        ) : loadingSlots ? (
           <div className="flex flex-col items-center justify-center py-12 bg-blue-50 rounded-xl border-2 border-blue-300">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-3"></div>
             <p className="text-sm text-blue-700 font-medium">A carregar horários disponíveis...</p>
             <p className="text-xs text-blue-600 mt-1">Verificando agenda do profissional selecionado</p>
+            {retryCount > 0 && (
+              <p className="text-xs text-blue-500 mt-2">Tentativa {retryCount + 1} de 3...</p>
+            )}
           </div>
         ) : (
           <>
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-4 mb-3 shadow-sm">
-              <p className="text-sm text-green-900 font-bold flex items-center mb-1">
-                <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
-                Horários Agregados de Todos os Profissionais
-              </p>
-              <p className="text-xs text-green-700 ml-7">
-                Mostrando todos os horários disponíveis. Clique num horário para escolher o profissional.
-              </p>
+            <div className="space-y-3">
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-4 shadow-sm">
+                <p className="text-sm text-green-900 font-bold flex items-center mb-1">
+                  <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
+                  Horários Agregados de Todos os Profissionais
+                </p>
+                <p className="text-xs text-green-700 ml-7">
+                  Este serviço tem <strong>{totalServiceCapacity} {totalServiceCapacity === 1 ? 'profissional' : 'profissionais'}</strong>. Os horários mostram quantos profissionais estão disponíveis.
+                </p>
+              </div>
+              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-300 rounded-lg p-4 shadow-sm">
+                <p className="text-sm text-blue-900 font-bold flex items-center mb-1">
+                  <AlertCircle className="h-5 w-5 mr-2 text-blue-600" />
+                  Sistema de Bloqueio Inteligente
+                </p>
+                <p className="text-xs text-blue-700 ml-7">
+                  Quando todos os {totalServiceCapacity} {totalServiceCapacity === 1 ? 'profissional estiver ocupado' : 'profissionais estiverem ocupados'}, o horário fica <strong>bloqueado</strong>. Apenas reservas <strong>confirmadas</strong> bloqueiam horários.
+                </p>
+                <div className="mt-2 ml-7 flex items-start space-x-2">
+                  <div className="flex items-center space-x-1.5">
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    <span className="text-xs text-blue-800">Todos livres</span>
+                  </div>
+                  <div className="flex items-center space-x-1.5">
+                    <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                    <span className="text-xs text-blue-800">Alguns ocupados</span>
+                  </div>
+                  <div className="flex items-center space-x-1.5">
+                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                    <span className="text-xs text-blue-800">Esgotado (0/{totalServiceCapacity})</span>
+                  </div>
+                </div>
+              </div>
             </div>
             <TimeSlotSelector
               timeSlots={timeSlots}
               selectedTime={formData.time}
               onTimeSelect={(time) => setFormData({ ...formData, time })}
               onSlotClick={handleTimeSlotClick}
+              showCapacityInfo={true}
               showProfessionalCount={true}
+              totalServiceCapacity={totalServiceCapacity}
             />
           </>
         )}
@@ -1163,6 +1220,15 @@ export function BookingForm() {
           </div>
         </div>
       )}
+
+      <BookingConfirmationModal
+        isOpen={showConfirmationModal}
+        isSuccess={bookingSuccess}
+        errorMessage={bookingErrorMessage}
+        bookingDetails={confirmedBookingDetails}
+        onClose={() => setShowConfirmationModal(false)}
+        isGuest={!profile}
+      />
     </div>
   );
 }

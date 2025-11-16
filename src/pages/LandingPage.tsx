@@ -16,13 +16,21 @@ import {
   ChevronRight,
   CheckCircle,
   Phone,
-  Instagram
+  Instagram,
+  AlertCircle,
+  Lock,
+  TrendingDown
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../utils/currency';
 import { GlowCard } from '../components/ui/spotlight-card';
 import { LandingAccordionItem } from '../components/ui/interactive-image-accordion';
 import { handleWhatsAppClick } from '../utils/whatsapp';
+import {
+  ServiceAvailabilityStatus
+} from '../utils/landingAvailability';
+import { ProfessionalCountBadge } from '../components/ProfessionalCountBadge';
+import { RealtimeAvailabilityBadge } from '../components/RealtimeAvailabilityBadge';
 
 interface CategoryData {
   name: string;
@@ -55,6 +63,7 @@ interface Service {
   };
   average_rating: number | null;
   availability_slots?: AvailabilitySlot[];
+  availability_status?: ServiceAvailabilityStatus | null;
 }
 
 export function LandingPage() {
@@ -68,6 +77,7 @@ export function LandingPage() {
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
   const [allLocations, setAllLocations] = useState<string[]>([]);
   const [categories, setCategories] = useState<CategoryData[]>([]);
+  const [serviceAvailability, setServiceAvailability] = useState<Map<string, { available: number, total: number }>>(new Map());
 
   const defaultCategories = [
     { name: 'Cabelo e penteado', count: 0 },
@@ -130,6 +140,9 @@ export function LandingPage() {
           .limit(9);
 
         if (services) {
+          const today = new Date().toISOString().split('T')[0];
+          const availabilityMap = new Map<string, { available: number, total: number }>();
+
           const servicesWithAvailability = await Promise.all(
             services.map(async (service) => {
               const { data: availability } = await supabase
@@ -140,6 +153,33 @@ export function LandingPage() {
                 .order('day_of_week', { ascending: true })
                 .order('start_time', { ascending: true });
 
+              // Fetch professional availability count for today
+              try {
+                const { data: availableCount } = await supabase.rpc(
+                  'get_available_professionals_count_quick',
+                  {
+                    p_service_id: service.id,
+                    p_date: today,
+                    p_start_time: '10:00:00',
+                    p_end_time: '10:30:00'
+                  }
+                );
+
+                const { data: totalCapacity } = await supabase.rpc(
+                  'get_service_total_capacity',
+                  {
+                    p_service_id: service.id
+                  }
+                );
+
+                availabilityMap.set(service.id, {
+                  available: availableCount || 0,
+                  total: totalCapacity || 1
+                });
+              } catch (err) {
+                console.error('Error fetching availability for service:', service.id, err);
+              }
+
               return {
                 ...service,
                 average_rating: service.reviews && service.reviews.length > 0
@@ -149,7 +189,9 @@ export function LandingPage() {
               };
             })
           );
+
           setFeaturedServices(servicesWithAvailability);
+          setServiceAvailability(availabilityMap);
         }
 
         const { data: professionals } = await supabase
@@ -426,7 +468,7 @@ export function LandingPage() {
                       )}
                     </div>
                   ) : (
-                    <div className="h-56 bg-gradient-to-br from-blue-100 to-blue-100 flex items-center justify-center">
+                    <div className="h-56 bg-gradient-to-br from-blue-100 to-blue-100 flex items-center justify-center relative">
                       <Scissors className="h-16 w-16 text-blue-300" />
                     </div>
                   )}
@@ -499,6 +541,13 @@ export function LandingPage() {
                       <div className="text-xl font-bold text-gray-900">
                         {formatCurrency(service.price)}
                       </div>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <RealtimeAvailabilityBadge
+                        serviceId={service.id}
+                        date={new Date()}
+                        compact={true}
+                      />
                     </div>
                     <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
                       <Link

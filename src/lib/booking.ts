@@ -38,14 +38,16 @@ export async function checkAvailability(
 
     const { data: blockedDates, error: blockedError } = await supabase
       .from('blocked_dates')
-      .select('date')
+      .select('date, reason')
       .eq('professional_id', professionalId)
-      .eq('date', date);
+      .eq('date', date)
+      .maybeSingle();
 
     if (blockedError) throw blockedError;
 
-    if (blockedDates && blockedDates.length > 0) {
-      return { slots: [], error: 'This date is blocked' };
+    if (blockedDates) {
+      console.log(`Date ${date} is blocked for professional ${professionalId}. Reason: ${blockedDates.reason || 'Not specified'}`);
+      return { slots: [], error: `This date is blocked: ${blockedDates.reason || 'Date unavailable'}` };
     }
 
     const startOfDay = new Date(date);

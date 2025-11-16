@@ -836,7 +836,7 @@ export function Services() {
                 <Trash2 className="h-5 w-5" />
               </button>
             )}
-            <div className="p-4">
+            <div className="p-4 sm:p-5">
               <div className="flex items-start justify-between mb-2">
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
@@ -976,7 +976,7 @@ export function Services() {
                       e.stopPropagation();
                       setEditingService(service);
                     }}
-                    className="btn-gradient flex items-center justify-center min-h-[52px] flex-1"
+                    className="btn-gradient flex items-center justify-center flex-1"
                   >
                     <Edit className="h-5 w-5 mr-2.5 flex-shrink-0" />
                     {t('services.details.actions.manage')}
@@ -996,7 +996,7 @@ export function Services() {
                           businessName: service.professional.business_name || service.professional.full_name
                         });
                       }}
-                      className="btn-whatsapp flex items-center justify-center min-h-[52px] flex-1"
+                      className="btn-whatsapp flex items-center justify-center flex-1"
                       aria-label="Contactar via WhatsApp"
                     >
                       <MessageCircle className="h-5 w-5 mr-2.5 flex-shrink-0" />

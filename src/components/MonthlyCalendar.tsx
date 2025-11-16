@@ -15,7 +15,9 @@ import {
   parseISO
 } from 'date-fns';
 import { ptLocale } from '../i18n';
-import { ChevronLeft, ChevronRight, Clock, User, AlertCircle, Calendar as CalendarIcon, CheckCircle2, XCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, User, AlertCircle, Calendar as CalendarIcon, CheckCircle2, XCircle, Users, Lock, Ban } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { useAuthStore } from '../store/authStore';
 
 interface Booking {
   id: string;
@@ -41,6 +43,13 @@ interface MonthlyCalendarProps {
   showArchived: boolean;
 }
 
+interface BlockedDate {
+  id: string;
+  professional_id: string;
+  date: string;
+  reason: string;
+}
+
 export function MonthlyCalendar({
   bookings,
   onDateClick,
@@ -48,13 +57,44 @@ export function MonthlyCalendar({
   showArchived
 }: MonthlyCalendarProps) {
   const { t } = useTranslation();
+  const { user } = useAuthStore();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
+  const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([]);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(monthStart);
   const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
   const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchBlockedDates();
+    }
+  }, [user?.id, currentMonth]);
+
+  const fetchBlockedDates = async () => {
+    if (!user?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('blocked_dates')
+        .select('*')
+        .eq('professional_id', user.id)
+        .gte('date', format(monthStart, 'yyyy-MM-dd'))
+        .lte('date', format(monthEnd, 'yyyy-MM-dd'));
+
+      if (error) {
+        console.error('Error fetching blocked dates:', error);
+        return;
+      }
+
+      setBlockedDates(data || []);
+      console.log('Blocked dates loaded for calendar:', data?.length || 0);
+    } catch (err) {
+      console.error('Error in fetchBlockedDates:', err);
+    }
+  };
 
   const isValidBooking = (booking: Booking): boolean => {
     return booking.client !== null && booking.service !== null;
@@ -101,6 +141,98 @@ export function MonthlyCalendar({
     });
   };
 
+  // Calculate available professionals for a date using real-time data
+  const [dailyAvailability, setDailyAvailability] = useState<Map<string, {available: number, total: number, percentage: number}>>(new Map());
+
+  useEffect(() => {
+    fetchDailyAvailabilityForMonth();
+  }, [currentMonth, bookings]);
+
+  const fetchDailyAvailabilityForMonth = async () => {
+    if (!user?.id) return;
+
+    const availability = new Map<string, {available: number, total: number, percentage: number}>();
+
+    // Get all unique service IDs from bookings
+    const serviceIds = new Set(bookings.map(b => b.service?.id).filter(Boolean));
+
+    if (serviceIds.size === 0) return;
+
+    // For each day in the month, fetch aggregate availability
+    let day = monthStart;
+    while (day <= monthEnd) {
+      const dateStr = format(day, 'yyyy-MM-dd');
+      let dayAvailable = 0;
+      let dayTotal = 0;
+
+      // For each service, check morning availability as a representative sample
+      for (const serviceId of Array.from(serviceIds)) {
+        try {
+          const { data } = await supabase.rpc('get_available_professionals_count_quick', {
+            p_service_id: serviceId,
+            p_date: dateStr,
+            p_start_time: '10:00:00',
+            p_end_time: '10:30:00'
+          });
+
+          if (data !== null && data !== undefined) {
+            const { data: capacityData } = await supabase.rpc('get_service_total_capacity', {
+              p_service_id: serviceId
+            });
+
+            dayAvailable += data || 0;
+            dayTotal += capacityData || 1;
+          }
+        } catch (err) {
+          console.error('Error fetching availability for date:', dateStr, err);
+        }
+      }
+
+      if (dayTotal > 0) {
+        availability.set(dateStr, {
+          available: dayAvailable,
+          total: dayTotal,
+          percentage: (dayAvailable / dayTotal) * 100
+        });
+      }
+
+      day = addDays(day, 1);
+    }
+
+    setDailyAvailability(availability);
+  };
+
+  const getAvailableSlotsForDate = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const data = dailyAvailability.get(dateStr);
+
+    if (data) {
+      return data;
+    }
+
+    // Fallback to default
+    return {
+      available: 1,
+      total: 1,
+      percentage: 100
+    };
+  };
+
+  const isDateBlocked = (date: Date) => {
+    return blockedDates.some(blocked => {
+      const blockedDate = parseISO(blocked.date);
+      return isSameDay(date, blockedDate);
+    });
+  };
+
+  const getBlockedDateReason = (date: Date) => {
+    const blocked = blockedDates.find(b => {
+      const blockedDate = parseISO(b.date);
+      return isSameDay(date, blockedDate);
+    });
+    return blocked?.reason;
+  };
+
   const renderCalendar = () => {
     const rows = [];
     let days = [];
@@ -135,6 +267,8 @@ export function MonthlyCalendar({
         const isCurrentMonth = isSameMonth(currentDay, monthStart);
         const isSelected = isSameDay(currentDay, selectedDate);
         const isTodayDay = isToday(currentDay);
+        const isDayBlocked = isDateBlocked(currentDay);
+        const blockedReason = getBlockedDateReason(currentDay);
         const activeBookings = dayBookings.filter(b =>
           showArchived ? true : ['pendente', 'confirmado'].includes(b.status)
         );
@@ -142,18 +276,25 @@ export function MonthlyCalendar({
         days.push(
           <div
             key={day.toString()}
-            className={`min-h-[130px] border-r border-b border-gray-200 p-3 cursor-pointer transition-all duration-200 hover:bg-gradient-to-br hover:from-blue-50 hover:to-cyan-50 hover:shadow-inner ${
-              !isCurrentMonth ? 'bg-gray-50/50' : 'bg-white'
+            className={`min-h-[130px] border-r border-b border-gray-200 p-3 cursor-pointer transition-all duration-200 hover:shadow-inner ${
+              isDayBlocked
+                ? 'bg-red-100/50 hover:bg-red-100 border-red-300 border-2'
+                : !isCurrentMonth
+                  ? 'bg-gray-50/50 hover:bg-gradient-to-br hover:from-blue-50 hover:to-cyan-50'
+                  : 'bg-white hover:bg-gradient-to-br hover:from-blue-50 hover:to-cyan-50'
             } ${isSelected ? 'ring-2 ring-blue-500 ring-inset bg-blue-50/30' : ''}`}
             onClick={() => onDateClick(currentDay)}
             onMouseEnter={() => setHoveredDate(currentDay)}
             onMouseLeave={() => setHoveredDate(null)}
+            title={isDayBlocked ? `DIA BLOQUEADO: ${blockedReason || 'Indisponível'}` : ''}
           >
             <div className="flex flex-col h-full">
               <div className="flex justify-between items-center mb-2">
                 <span
                   className={`text-sm font-bold transition-all duration-200 ${
-                    isTodayDay
+                    isDayBlocked
+                      ? 'text-red-700 w-8 h-8 flex items-center justify-center bg-red-200 rounded-lg line-through'
+                      : isTodayDay
                       ? 'bg-gradient-to-br from-blue-600 to-cyan-600 text-white w-8 h-8 rounded-xl flex items-center justify-center shadow-lg ring-2 ring-blue-300 ring-offset-1'
                       : isCurrentMonth
                       ? 'text-gray-900 w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg'
@@ -162,11 +303,46 @@ export function MonthlyCalendar({
                 >
                   {format(currentDay, 'd')}
                 </span>
-                {activeBookings.length > 0 && (
-                  <span className="text-xs bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-2.5 py-1 rounded-full font-bold shadow-sm">
-                    {activeBookings.length}
-                  </span>
-                )}
+                {isDayBlocked ? (
+                  <div className="flex items-center space-x-1 text-xs bg-red-200 text-red-700 px-2 py-1 rounded-full font-bold shadow-sm" title={`Bloqueado: ${blockedReason}`}>
+                    <Ban className="h-3 w-3" />
+                    <span>Bloqueado</span>
+                  </div>
+                ) : (() => {
+                  const slotInfo = getAvailableSlotsForDate(currentDay);
+                  const hasBookings = activeBookings.length > 0;
+
+                  if (!hasBookings) return null;
+
+                  // Determine color based on availability percentage
+                  let badgeColor = 'from-green-500 to-emerald-500'; // All available
+                  let iconElement = <Users className="h-3 w-3" />;
+                  let textContent = slotInfo.available === 1 ? '1 vaga' : `${slotInfo.available} vagas`;
+
+                  if (slotInfo.available === 0) {
+                    badgeColor = 'from-red-500 to-red-600';
+                    iconElement = <Lock className="h-3 w-3" />;
+                    textContent = 'Esgotado';
+                  } else if (slotInfo.percentage <= 50) {
+                    badgeColor = 'from-orange-500 to-amber-500';
+                    iconElement = <AlertCircle className="h-3 w-3" />;
+                    textContent = slotInfo.available === 1 ? '1 vaga' : `${slotInfo.available} vagas`;
+                  } else if (slotInfo.percentage < 100) {
+                    badgeColor = 'from-yellow-500 to-amber-500';
+                    iconElement = <Users className="h-3 w-3" />;
+                    textContent = slotInfo.available === 1 ? '1 vaga' : `${slotInfo.available} vagas`;
+                  }
+
+                  return (
+                    <span
+                      className={`text-xs bg-gradient-to-r ${badgeColor} text-white px-2.5 py-1 rounded-full font-bold shadow-sm flex items-center space-x-1`}
+                      title={`${slotInfo.available} de ${slotInfo.total} profissionais disponíveis`}
+                    >
+                      {iconElement}
+                      <span>{textContent}</span>
+                    </span>
+                  );
+                })()}
               </div>
 
               <div className="flex-1 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
@@ -199,13 +375,15 @@ export function MonthlyCalendar({
                       }}
                     >
                       {isConfirmed && (
-                        <div className="absolute -left-1 top-1/2 -translate-y-1/2 flex items-center justify-center" title="Bloqueia disponibilidade">
+                        <div className="absolute -left-1 top-1/2 -translate-y-1/2 flex items-center justify-center" title="CONFIRMADO - Bloqueia disponibilidade para este profissional">
                           <div className="absolute w-2 h-2 bg-red-500 rounded-full animate-ping opacity-75" />
-                          <div className="relative w-1.5 h-1.5 bg-red-600 rounded-full shadow-sm" />
+                          <div className="relative w-1.5 h-1.5 bg-red-600 rounded-full shadow-sm">
+                            <Lock className="h-1 w-1 text-white absolute top-0 left-0" />
+                          </div>
                         </div>
                       )}
                       {isPending && (
-                        <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-yellow-500 rounded-full shadow-sm" title="Não bloqueia - aguarda confirmação"></div>
+                        <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-yellow-500 rounded-full shadow-sm" title="PENDENTE - Não bloqueia disponibilidade (aguarda confirmação do profissional)"></div>
                       )}
                       <div className="flex items-center space-x-1">
                         <Clock className="h-3 w-3 flex-shrink-0" />
@@ -350,17 +528,29 @@ export function MonthlyCalendar({
           )}
         </div>
         {!showArchived && (
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg sm:rounded-xl p-2 sm:p-3 flex items-start space-x-2 sm:space-x-3 shadow-sm">
-            <div className="h-5 w-5 sm:h-6 sm:w-6 rounded-md sm:rounded-lg bg-green-500 flex items-center justify-center flex-shrink-0 shadow-sm">
-              <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
+          <div className="space-y-2">
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg sm:rounded-xl p-2 sm:p-3 flex items-start space-x-2 sm:space-x-3 shadow-sm">
+              <div className="h-5 w-5 sm:h-6 sm:w-6 rounded-md sm:rounded-lg bg-green-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+                <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-[10px] sm:text-xs text-green-900 leading-relaxed">
+                  <span className="font-bold hidden sm:inline">Reservas confirmadas</span>
+                  <span className="font-bold sm:hidden">Confirmadas</span> bloqueiam horários.
+                  <span className="font-bold hidden sm:inline">Reservas pendentes</span>
+                  <span className="font-bold sm:hidden">Pendentes</span> NÃO bloqueiam<span className="hidden sm:inline"> e podem ser sobrepostas até serem confirmadas</span>.
+                </p>
+              </div>
             </div>
-            <div className="flex-1">
-              <p className="text-[10px] sm:text-xs text-green-900 leading-relaxed">
-                <span className="font-bold hidden sm:inline">Reservas confirmadas</span>
-                <span className="font-bold sm:hidden">Confirmadas</span> bloqueiam horários.
-                <span className="font-bold hidden sm:inline">Reservas pendentes</span>
-                <span className="font-bold sm:hidden">Pendentes</span> NÃO bloqueiam<span className="hidden sm:inline"> e podem ser sobrepostas até serem confirmadas</span>.
-              </p>
+            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-300 rounded-lg sm:rounded-xl p-2 sm:p-3 flex items-start space-x-2 sm:space-x-3 shadow-sm">
+              <div className="h-5 w-5 sm:h-6 sm:w-6 rounded-md sm:rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+                <Users className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-[10px] sm:text-xs text-blue-900 leading-relaxed">
+                  <span className="font-bold">Sistema de Capacidade:</span> Quando todos os profissionais têm reservas confirmadas no mesmo horário, esse horário fica <span className="font-bold">bloqueado</span> para novas reservas.
+                </p>
+              </div>
             </div>
           </div>
         )}

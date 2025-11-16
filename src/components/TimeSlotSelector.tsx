@@ -1,25 +1,25 @@
-import { Clock, Sunrise, Sun, Moon, Sparkles } from 'lucide-react';
-import { useState } from 'react';
+import { Clock, Sunrise, Sun, Moon, Sparkles, Users, AlertTriangle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { getCapacityColorClasses, getCapacityLabel } from '../utils/availability';
 
 interface TimeSlot {
   time: string;
   isAvailable: boolean;
-  availableProfessionals?: {
-    unique_id: string;
-    profile_id: string | null;
-    team_member_id: string | null;
-    full_name: string;
-    avatar_url: string | null;
-    is_primary: boolean;
-  }[];
+  totalCapacity?: number;
+  availableCapacity?: number;
+  utilizationPercentage?: number;
+  blockedReason?: string;
+  availableProfessionals?: any[];
 }
 
 interface TimeSlotSelectorProps {
   timeSlots: TimeSlot[];
   selectedTime: string;
   onTimeSelect: (time: string) => void;
+  showCapacityInfo?: boolean;
   onSlotClick?: (slot: TimeSlot) => void;
   showProfessionalCount?: boolean;
+  totalServiceCapacity?: number;
 }
 
 const TIME_PERIODS = [
@@ -55,8 +55,17 @@ const TIME_PERIODS = [
   },
 ];
 
-export function TimeSlotSelector({ timeSlots, selectedTime, onTimeSelect, onSlotClick, showProfessionalCount = false }: TimeSlotSelectorProps) {
+export function TimeSlotSelector({
+  timeSlots,
+  selectedTime,
+  onTimeSelect,
+  showCapacityInfo = true,
+  onSlotClick,
+  showProfessionalCount = false,
+  totalServiceCapacity = 1
+}: TimeSlotSelectorProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null);
+  const [periodAvailability, setPeriodAvailability] = useState<Map<string, number>>(new Map());
 
   const isTimeInPeriod = (time: string, start: string, end: string) => {
     return time >= start && time < end;
@@ -71,8 +80,53 @@ export function TimeSlotSelector({ timeSlots, selectedTime, onTimeSelect, onSlot
     return timeSlots.filter(slot => isTimeInPeriod(slot.time, period.start, period.end));
   };
 
+  useEffect(() => {
+    const availability = new Map<string, number>();
+
+    // Debug logs (can be removed in production)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[TimeSlotSelector] Calculating period availability');
+      console.log('Total service capacity:', totalServiceCapacity);
+      console.log('Total time slots:', timeSlots.length);
+    }
+
+    TIME_PERIODS.forEach(period => {
+      const periodSlots = timeSlots.filter(slot =>
+        isTimeInPeriod(slot.time, period.start, period.end)
+      );
+
+      // CRITICAL FIX: Count slots that have AT LEAST ONE professional available
+      // A slot is available if availableCapacity > 0 OR availableProfessionals.length > 0
+      const availableInPeriod = periodSlots.filter(s => {
+        const hasProfessionals = s.availableProfessionals && s.availableProfessionals.length > 0;
+        const hasCapacity = s.availableCapacity !== undefined && s.availableCapacity > 0;
+        const isAvailableFlag = s.isAvailable;
+
+        return hasProfessionals || hasCapacity || isAvailableFlag;
+      }).length;
+
+      availability.set(period.label, availableInPeriod);
+
+      // Debug log
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`${period.label}: ${availableInPeriod}/${periodSlots.length} horários disponíveis`);
+      }
+    });
+
+    setPeriodAvailability(availability);
+  }, [timeSlots, totalServiceCapacity]);
+
   const filteredSlots = getFilteredSlots();
-  const availableCount = filteredSlots.filter(s => s.isAvailable).length;
+  // CRITICAL FIX: Count slots with actual available capacity
+  const availableCount = filteredSlots.filter(s => {
+    if (s.availableProfessionals && s.availableProfessionals.length > 0) {
+      return true;
+    }
+    if (s.availableCapacity !== undefined && s.availableCapacity > 0) {
+      return true;
+    }
+    return s.isAvailable;
+  }).length;
 
   return (
     <div className="space-y-6">
@@ -95,12 +149,38 @@ export function TimeSlotSelector({ timeSlots, selectedTime, onTimeSelect, onSlot
         </div>
       </div>
 
+      {/* Aviso sobre horários esgotados */}
+      <div className="bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border-2 border-amber-300 rounded-xl p-4 shadow-sm">
+        <div className="flex items-start space-x-3">
+          <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h4 className="text-sm font-bold text-amber-900 mb-1">
+              ⚠️ Disponibilidade em Tempo Real
+            </h4>
+            <p className="text-xs text-amber-800 leading-relaxed">
+              Os horários mostrados refletem as reservas confirmadas na base de dados.
+              <strong className="font-bold"> Horários com 0/{totalServiceCapacity} vagas estão ESGOTADOS</strong> e não aceitam mais reservas.
+              A informação atualiza automaticamente quando alguém faz ou cancela uma reserva.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         {TIME_PERIODS.map((period) => {
           const periodSlots = timeSlots.filter(slot =>
             isTimeInPeriod(slot.time, period.start, period.end)
           );
-          const periodAvailable = periodSlots.filter(s => s.isAvailable).length;
+          // CRITICAL FIX: Count slots with actual available capacity
+          const periodAvailable = periodSlots.filter(s => {
+            if (s.availableProfessionals && s.availableProfessionals.length > 0) {
+              return true;
+            }
+            if (s.availableCapacity !== undefined && s.availableCapacity > 0) {
+              return true;
+            }
+            return s.isAvailable;
+          }).length;
           const isSelected = selectedPeriod === period.label;
           const IconComponent = period.icon;
 
@@ -156,16 +236,25 @@ export function TimeSlotSelector({ timeSlots, selectedTime, onTimeSelect, onSlot
         })}
       </div>
 
-      <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 rounded-2xl p-4 sm:p-6 border-2 border-gray-200 shadow-inner">
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4 max-h-96 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-blue-300 scrollbar-track-gray-100 rounded-xl">
+      <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 rounded-2xl p-4 sm:p-6 border-2 border-gray-200 shadow-inner overflow-hidden">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 max-h-[500px] overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-blue-300 scrollbar-track-gray-100 rounded-xl">
           {filteredSlots.map((slot, index) => {
             const isSelected = selectedTime === slot.time;
+            // CRITICAL FIX: Use availableProfessionals.length if available, otherwise use availableCapacity
+            const availableCount = slot.availableProfessionals
+              ? slot.availableProfessionals.length
+              : (slot.availableCapacity || 0);
+            const slotTotalCapacity = slot.totalCapacity || totalServiceCapacity || 1;
+            const occupiedCount = slotTotalCapacity - availableCount;
+            // CRITICAL FIX: A slot is fully booked ONLY if availableCount is 0
+            const isFullyBooked = availableCount === 0;
+            const utilizationPct = slot.utilizationPercentage || 0;
 
             return (
               <button
                 key={index}
                 type="button"
-                disabled={!slot.isAvailable}
+                disabled={isFullyBooked}
                 onClick={() => {
                   if (onSlotClick) {
                     onSlotClick(slot);
@@ -174,34 +263,46 @@ export function TimeSlotSelector({ timeSlots, selectedTime, onTimeSelect, onSlot
                   }
                 }}
                 className={`
-                  relative py-4 px-3 rounded-xl text-base font-semibold transition-all duration-300 group transform min-h-[72px] touch-manipulation
+                  relative py-3 px-2 rounded-xl text-sm sm:text-base font-semibold transition-all duration-300 group transform min-h-[68px] touch-manipulation w-full
                   ${isSelected
                     ? 'bg-gradient-to-br from-blue-600 to-cyan-600 text-white shadow-xl scale-105 ring-2 ring-blue-400 ring-offset-2 -translate-y-1'
-                    : slot.isAvailable
+                    : !isFullyBooked
                       ? 'bg-white text-gray-700 hover:bg-gradient-to-br hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700 hover:shadow-lg hover:scale-105 hover:-translate-y-0.5 border-2 border-gray-200 hover:border-blue-300'
-                      : 'bg-gradient-to-br from-gray-100 to-gray-200 text-gray-400 cursor-not-allowed border-2 border-gray-300 opacity-50'
+                      : 'bg-gradient-to-br from-red-100 to-red-200 text-red-500 cursor-not-allowed border-2 border-red-300 opacity-70'
                   }
                 `}
-                title={!slot.isAvailable ? 'Horário esgotado - todos os profissionais ocupados' : 'Clique para selecionar este horário'}
+                title={
+                  isFullyBooked
+                    ? slot.blockedReason || `❌ ESGOTADO - Horário ${slot.time} já não aceita mais reservas (0/${slotTotalCapacity} vagas)`
+                    : `✅ DISPONÍVEL - ${availableCount}/${slotTotalCapacity} ${availableCount === 1 ? 'vaga disponível' : 'vagas disponíveis'} às ${slot.time}`
+                }
               >
-                <div className="flex flex-col items-center space-y-1.5">
-                  <span className={`text-lg ${isSelected ? 'font-extrabold tracking-tight' : 'font-bold'} ${!slot.isAvailable ? 'line-through opacity-50' : ''}`}>
+                <div className="flex flex-col items-center space-y-1.5 w-full">
+                  <span className={`text-base sm:text-lg ${isSelected ? 'font-extrabold tracking-tight' : 'font-bold'} ${isFullyBooked ? 'line-through opacity-50' : ''}`}>
                     {slot.time}
                   </span>
-                  {showProfessionalCount && slot.availableProfessionals && slot.availableProfessionals.length > 0 && (
-                    <div className={`flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold ${
-                      isSelected
-                        ? 'bg-white/25 text-white'
-                        : 'bg-blue-100 text-blue-700 group-hover:bg-blue-200'
-                    }`}>
-                      <span>{slot.availableProfessionals.length}</span>
-                      <span className="opacity-75">{slot.availableProfessionals.length === 1 ? 'prof' : 'profs'}</span>
-                    </div>
-                  )}
-                  {!slot.isAvailable && (
-                    <span className="text-xs text-red-700 font-bold bg-red-100 px-2.5 py-1 rounded-full">
-                      Ocupado
-                    </span>
+                  {showCapacityInfo && (
+                    <>
+                      {!isFullyBooked ? (
+                        <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-[10px] sm:text-xs font-bold transition-all whitespace-nowrap ${
+                          isSelected
+                            ? 'bg-white/25 text-white'
+                            : utilizationPct < 50
+                              ? 'bg-green-100 text-green-700 group-hover:bg-green-200 ring-1 ring-green-300'
+                              : utilizationPct < 80
+                                ? 'bg-amber-100 text-amber-700 group-hover:bg-amber-200 ring-1 ring-amber-300'
+                                : 'bg-orange-100 text-orange-700 group-hover:bg-orange-200 ring-1 ring-orange-300'
+                        }`}>
+                          <Users className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                          <span>{availableCount}/{slotTotalCapacity}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center space-x-1 px-2 py-1 rounded-full text-[9px] sm:text-[10px] font-bold bg-red-100 text-red-700 ring-1 ring-red-300">
+                          <AlertTriangle className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                          <span className="font-extrabold">ESGOTADO</span>
+                        </div>
+                      )}
+                    </>
                   )}
                   {isSelected && (
                     <div className="absolute -top-2 -right-2 flex items-center justify-center">

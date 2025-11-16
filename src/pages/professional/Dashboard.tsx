@@ -21,6 +21,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { ptLocale } from '../../i18n';
 import { formatCurrency } from '../../utils/currency';
 import { useNotifications } from '../../hooks/useNotifications';
+import { RealtimeAvailabilityBadge } from '../../components/RealtimeAvailabilityBadge';
 import {
   BarChart,
   Bar,
@@ -61,6 +62,7 @@ export function ProfessionalDashboard() {
   const [loading, setLoading] = useState(true);
   const [serviceModifications, setServiceModifications] = useState<any[]>([]);
   const [modificationsCount, setModificationsCount] = useState(0);
+  const [myServices, setMyServices] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -153,6 +155,18 @@ export function ProfessionalDashboard() {
           setServiceModifications(modificationsData);
           setModificationsCount(modificationsData.length);
         }
+
+        // Buscar serviços do profissional para badges de disponibilidade
+        const { data: servicesData } = await supabase
+          .from('services')
+          .select('id, title')
+          .eq('professional_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(3);
+
+        if (servicesData) {
+          setMyServices(servicesData);
+        }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -196,6 +210,29 @@ export function ProfessionalDashboard() {
           </Link>
         </div>
       </div>
+
+      {/* Disponibilidade em Tempo Real */}
+      {myServices.length > 0 && (
+        <div className="card-gradient p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <Activity className="h-5 w-5 mr-2 text-blue-600" />
+            Disponibilidade dos Seus Serviços Hoje
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {myServices.map((service) => (
+              <div key={service.id} className="space-y-2">
+                <h3 className="text-sm font-medium text-gray-700">{service.title}</h3>
+                <RealtimeAvailabilityBadge
+                  serviceId={service.id}
+                  date={new Date()}
+                  compact={false}
+                  showStats={true}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Notifications Panel */}
       {unreadCount > 0 && (
