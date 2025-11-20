@@ -94,7 +94,7 @@ export function ProfessionalDashboard() {
 
         const bookings = bookingsData || [];
 
-        const totalBookings = bookings.length;
+        const totalBookings = bookings.filter(b => b.status === 'confirmado').length;
 
         const uniqueClients = new Set(bookings.map(b => b.client_id).filter(Boolean));
         const totalClients = uniqueClients.size;

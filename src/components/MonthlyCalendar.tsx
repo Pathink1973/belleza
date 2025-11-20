@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   format,
@@ -61,6 +61,9 @@ export function MonthlyCalendar({
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
   const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([]);
+  const [updatedDates, setUpdatedDates] = useState<Set<string>>(new Set());
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const channelRef = useRef<any>(null);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(monthStart);
@@ -144,60 +147,218 @@ export function MonthlyCalendar({
   // Calculate available professionals for a date using real-time data
   const [dailyAvailability, setDailyAvailability] = useState<Map<string, {available: number, total: number, percentage: number}>>(new Map());
 
+  // Debounced refetch function to prevent excessive API calls
+  const debouncedRefetch = useCallback((affectedDate?: string) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      console.log('[MonthlyCalendar] Debounced refetch triggered for:', affectedDate || 'entire month');
+
+      if (affectedDate) {
+        // Add visual feedback for updated date
+        setUpdatedDates(prev => {
+          const newSet = new Set(prev);
+          newSet.add(affectedDate);
+          return newSet;
+        });
+
+        // Remove the highlight after animation
+        setTimeout(() => {
+          setUpdatedDates(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(affectedDate);
+            return newSet;
+          });
+        }, 2000);
+      }
+
+      fetchDailyAvailabilityForMonth();
+    }, 1000);
+  }, []);
+
   useEffect(() => {
     fetchDailyAvailabilityForMonth();
   }, [currentMonth, bookings]);
+
+  // Real-time subscription for booking changes
+  useEffect(() => {
+    const serviceIds = new Set(bookings.map(b => b.service?.id).filter(Boolean));
+    if (serviceIds.size === 0) return;
+
+    console.log('[MonthlyCalendar] Setting up realtime subscription for services:', serviceIds.size);
+
+    // Clean up existing channel
+    if (channelRef.current) {
+      try {
+        supabase.removeChannel(channelRef.current);
+      } catch (err) {
+        console.warn('[MonthlyCalendar] Error removing old channel:', err);
+      }
+    }
+
+    const channel = supabase
+      .channel(`calendar-availability-realtime-${Date.now()}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings'
+        },
+        (payload) => {
+          console.log('[MonthlyCalendar] Realtime booking event:', payload.eventType, payload);
+
+          // Handle all event types: INSERT, UPDATE, DELETE
+          const booking = (payload.eventType === 'DELETE' ? payload.old : payload.new) as any;
+
+          if (!booking || !booking.start_time) {
+            console.warn('[MonthlyCalendar] Invalid booking data in realtime event');
+            return;
+          }
+
+          // Extract date from booking
+          const bookingDateStr = booking.start_time.split('T')[0];
+          const bookingDate = parseISO(bookingDateStr);
+
+          // Check if booking is within current month view
+          if (bookingDate >= monthStart && bookingDate <= monthEnd) {
+            console.log('[MonthlyCalendar] Booking change affects current month:', bookingDateStr);
+
+            // Check if this booking is for one of the services we're tracking
+            if (serviceIds.has(booking.service_id)) {
+              console.log('[MonthlyCalendar] Service matches, triggering availability update');
+              debouncedRefetch(bookingDateStr);
+            }
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'blocked_dates'
+        },
+        (payload) => {
+          console.log('[MonthlyCalendar] Realtime blocked_dates event:', payload.eventType);
+
+          const blockedDate = (payload.eventType === 'DELETE' ? payload.old : payload.new) as any;
+
+          if (!blockedDate || !blockedDate.date) return;
+
+          const dateObj = parseISO(blockedDate.date);
+
+          if (dateObj >= monthStart && dateObj <= monthEnd) {
+            console.log('[MonthlyCalendar] Blocked date change affects current month');
+
+            // Refresh blocked dates
+            if (user?.id && blockedDate.professional_id === user.id) {
+              fetchBlockedDates();
+              debouncedRefetch(blockedDate.date);
+            }
+          }
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('[MonthlyCalendar] ✅ Realtime subscription active');
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('[MonthlyCalendar] ⚠️  Realtime subscription failed:', status);
+        } else if (status === 'CLOSED') {
+          console.log('[MonthlyCalendar] Realtime subscription closed');
+        }
+      });
+
+    channelRef.current = channel;
+
+    return () => {
+      console.log('[MonthlyCalendar] Cleaning up realtime subscription');
+
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      if (channelRef.current) {
+        try {
+          supabase.removeChannel(channelRef.current);
+          channelRef.current = null;
+        } catch (err) {
+          console.warn('[MonthlyCalendar] Error during cleanup:', err);
+        }
+      }
+    };
+  }, [currentMonth, bookings, monthStart, monthEnd, user?.id, debouncedRefetch]);
 
   const fetchDailyAvailabilityForMonth = async () => {
     if (!user?.id) return;
 
     const availability = new Map<string, {available: number, total: number, percentage: number}>();
 
-    // Get all unique service IDs from bookings
     const serviceIds = new Set(bookings.map(b => b.service?.id).filter(Boolean));
 
     if (serviceIds.size === 0) return;
 
-    // For each day in the month, fetch aggregate availability
-    let day = monthStart;
-    while (day <= monthEnd) {
-      const dateStr = format(day, 'yyyy-MM-dd');
-      let dayAvailable = 0;
-      let dayTotal = 0;
+    // CRITICAL FIX: Use the corrected get_service_daily_capacity_summary function
+    // This now returns: total_slots = team_size × time_slots, available = total - confirmed
 
-      // For each service, check morning availability as a representative sample
-      for (const serviceId of Array.from(serviceIds)) {
-        try {
-          const { data } = await supabase.rpc('get_available_professionals_count_quick', {
+    for (const serviceId of Array.from(serviceIds)) {
+      try {
+        // Generate all dates in the month
+        const currentDate = new Date(monthStart);
+        const endDate = new Date(monthEnd);
+
+        while (currentDate <= endDate) {
+          const dateStr = format(currentDate, 'yyyy-MM-dd');
+
+          // Use public function that works for all users (authenticated and anonymous)
+          const { data, error } = await supabase.rpc('get_public_service_daily_capacity', {
             p_service_id: serviceId,
-            p_date: dateStr,
-            p_start_time: '10:00:00',
-            p_end_time: '10:30:00'
+            p_date: dateStr
           });
 
-          if (data !== null && data !== undefined) {
-            const { data: capacityData } = await supabase.rpc('get_service_total_capacity', {
-              p_service_id: serviceId
-            });
-
-            dayAvailable += data || 0;
-            dayTotal += capacityData || 1;
+          if (error) {
+            console.error('Error fetching daily capacity:', error);
+            currentDate.setDate(currentDate.getDate() + 1);
+            continue;
           }
-        } catch (err) {
-          console.error('Error fetching availability for date:', dateStr, err);
+
+          if (data && data.length > 0) {
+            const summary = data[0];
+            const existing = availability.get(dateStr);
+
+            // CORRECT AGGREGATION: Sum capacities across services
+            if (!existing) {
+              availability.set(dateStr, {
+                available: summary.available_slots || 0,
+                total: summary.total_slots || 0,
+                percentage: summary.total_slots > 0
+                  ? ((summary.available_slots / summary.total_slots) * 100)
+                  : 0
+              });
+            } else {
+              const newTotal = existing.total + (summary.total_slots || 0);
+              const newAvailable = existing.available + (summary.available_slots || 0);
+              availability.set(dateStr, {
+                available: newAvailable,
+                total: newTotal,
+                percentage: newTotal > 0 ? ((newAvailable / newTotal) * 100) : 0
+              });
+            }
+          }
+
+          currentDate.setDate(currentDate.getDate() + 1);
         }
+      } catch (err) {
+        console.error('Error fetching availability for service:', serviceId, err);
       }
-
-      if (dayTotal > 0) {
-        availability.set(dateStr, {
-          available: dayAvailable,
-          total: dayTotal,
-          percentage: (dayAvailable / dayTotal) * 100
-        });
-      }
-
-      day = addDays(day, 1);
     }
+
+    console.log('[MonthlyCalendar] Daily availability loaded (FIXED):', {
+      daysWithData: availability.size,
+      sampleDay: availability.entries().next().value
+    });
 
     setDailyAvailability(availability);
   };
@@ -273,16 +434,21 @@ export function MonthlyCalendar({
           showArchived ? true : ['pendente', 'confirmado'].includes(b.status)
         );
 
+        const dayDateStr = format(currentDay, 'yyyy-MM-dd');
+        const isDateUpdated = updatedDates.has(dayDateStr);
+
         days.push(
           <div
             key={day.toString()}
-            className={`min-h-[130px] border-r border-b border-gray-200 p-3 cursor-pointer transition-all duration-200 hover:shadow-inner ${
+            className={`min-h-[130px] border-r border-b border-gray-200 p-3 cursor-pointer transition-all duration-300 hover:shadow-inner ${
               isDayBlocked
                 ? 'bg-red-100/50 hover:bg-red-100 border-red-300 border-2'
                 : !isCurrentMonth
                   ? 'bg-gray-50/50 hover:bg-gradient-to-br hover:from-blue-50 hover:to-cyan-50'
                   : 'bg-white hover:bg-gradient-to-br hover:from-blue-50 hover:to-cyan-50'
-            } ${isSelected ? 'ring-2 ring-blue-500 ring-inset bg-blue-50/30' : ''}`}
+            } ${isSelected ? 'ring-2 ring-blue-500 ring-inset bg-blue-50/30' : ''} ${
+              isDateUpdated ? 'ring-2 ring-green-400 ring-inset bg-green-50/30 animate-pulse' : ''
+            }`}
             onClick={() => onDateClick(currentDay)}
             onMouseEnter={() => setHoveredDate(currentDay)}
             onMouseLeave={() => setHoveredDate(null)}
@@ -308,41 +474,7 @@ export function MonthlyCalendar({
                     <Ban className="h-3 w-3" />
                     <span>Bloqueado</span>
                   </div>
-                ) : (() => {
-                  const slotInfo = getAvailableSlotsForDate(currentDay);
-                  const hasBookings = activeBookings.length > 0;
-
-                  if (!hasBookings) return null;
-
-                  // Determine color based on availability percentage
-                  let badgeColor = 'from-green-500 to-emerald-500'; // All available
-                  let iconElement = <Users className="h-3 w-3" />;
-                  let textContent = slotInfo.available === 1 ? '1 vaga' : `${slotInfo.available} vagas`;
-
-                  if (slotInfo.available === 0) {
-                    badgeColor = 'from-red-500 to-red-600';
-                    iconElement = <Lock className="h-3 w-3" />;
-                    textContent = 'Esgotado';
-                  } else if (slotInfo.percentage <= 50) {
-                    badgeColor = 'from-orange-500 to-amber-500';
-                    iconElement = <AlertCircle className="h-3 w-3" />;
-                    textContent = slotInfo.available === 1 ? '1 vaga' : `${slotInfo.available} vagas`;
-                  } else if (slotInfo.percentage < 100) {
-                    badgeColor = 'from-yellow-500 to-amber-500';
-                    iconElement = <Users className="h-3 w-3" />;
-                    textContent = slotInfo.available === 1 ? '1 vaga' : `${slotInfo.available} vagas`;
-                  }
-
-                  return (
-                    <span
-                      className={`text-xs bg-gradient-to-r ${badgeColor} text-white px-2.5 py-1 rounded-full font-bold shadow-sm flex items-center space-x-1`}
-                      title={`${slotInfo.available} de ${slotInfo.total} profissionais disponíveis`}
-                    >
-                      {iconElement}
-                      <span>{textContent}</span>
-                    </span>
-                  );
-                })()}
+                ) : null}
               </div>
 
               <div className="flex-1 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">

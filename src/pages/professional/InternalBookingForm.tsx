@@ -1,13 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { format, addDays, setHours, setMinutes, isAfter, isBefore, startOfDay } from 'date-fns';
 import { pt } from 'date-fns/locale';
-import { Calendar, Clock, AlertCircle, CheckCircle, User, Phone, Plus, Search, X } from 'lucide-react';
+import { Calendar, Clock, AlertCircle, CheckCircle, User, Phone, Plus, Search, X, Wifi, WifiOff, RefreshCw, Ban, Zap } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../utils/currency';
 import { parseDurationToMinutes } from '../../utils/date';
+import { useRealtimeBookings } from '../../hooks/useRealtimeBookings';
+import { useRealtimeServices } from '../../hooks/useRealtimeServices';
+import { QuickBlockModal } from '../../components/QuickBlockModal';
 
 interface Client {
   id: string;
@@ -25,12 +28,23 @@ interface ServiceProfessional {
   };
 }
 
+interface ServiceVariant {
+  id: string;
+  service_id: string;
+  name: string;
+  price: number;
+  duration: string;
+  display_order: number;
+}
+
 interface Service {
   id: string;
   title: string;
   price: number;
   duration: string;
+  team?: any[];
   service_professionals?: ServiceProfessional[];
+  variants?: ServiceVariant[];
 }
 
 interface TimeSlot {
@@ -49,37 +63,45 @@ interface TimeSlot {
 interface InternalBookingFormData {
   clientId: string;
   serviceId: string;
+  variantId: string;
   selectedProfessionalId: string;
   date: string;
   time: string;
   notes: string;
-  newClientName: string;
-  newClientPhone: string;
 }
 
 export function InternalBookingForm() {
+  console.log('[INTERNAL_BOOKING_FORM] Component rendering...');
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { profile } = useAuthStore();
+
+  console.log('[INTERNAL_BOOKING_FORM] Profile:', profile);
   const [clients, setClients] = useState<Client[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [showNewClientForm, setShowNewClientForm] = useState(false);
   const [clientSearch, setClientSearch] = useState('');
   const [showProfessionalModal, setShowProfessionalModal] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null);
+  const [isRefreshingSlots, setIsRefreshingSlots] = useState(false);
+  const [recentlyChangedSlots, setRecentlyChangedSlots] = useState<Set<string>>(new Set());
+  const [showQuickBlockModal, setShowQuickBlockModal] = useState(false);
+  const [showNotesField, setShowNotesField] = useState(false);
+
+  const loadTimeSlotsRef = useRef<() => Promise<void>>();
+  const fetchServicesRef = useRef<() => Promise<void>>();
   const [formData, setFormData] = useState<InternalBookingFormData>({
     clientId: '',
     serviceId: '',
+    variantId: '',
     selectedProfessionalId: '',
     date: format(new Date(), 'yyyy-MM-dd'),
     time: '09:00',
     notes: '',
-    newClientName: '',
-    newClientPhone: '',
   });
 
   useEffect(() => {
@@ -87,13 +109,108 @@ export function InternalBookingForm() {
       fetchClients();
       fetchServices();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id]);
 
   useEffect(() => {
-    if (formData.serviceId && formData.date) {
-      loadTimeSlots();
+    if (formData.serviceId && services.length > 0) {
+      const selectedServiceStillExists = services.some(s => s.id === formData.serviceId);
+      if (!selectedServiceStillExists) {
+        console.log('[CONFLICT_DETECTION] Selected service was deleted');
+        setError('O serviço selecionado foi removido. Por favor, selecione outro serviço.');
+        setFormData(prev => ({ ...prev, serviceId: '', variantId: '', time: '09:00', selectedProfessionalId: '' }));
+        setTimeout(() => setError(''), 5000);
+      }
     }
-  }, [formData.serviceId, formData.date]);
+  }, [services, formData.serviceId]);
+
+  // Reset variant when service changes
+  useEffect(() => {
+    if (formData.serviceId) {
+      const selectedService = services.find(s => s.id === formData.serviceId);
+      if (selectedService?.variants && selectedService.variants.length === 1) {
+        // Auto-select if only one variant
+        setFormData(prev => ({ ...prev, variantId: selectedService.variants![0].id }));
+      } else {
+        // Reset variant selection when service changes
+        setFormData(prev => ({ ...prev, variantId: '', time: '09:00', selectedProfessionalId: '' }));
+      }
+    }
+  }, [formData.serviceId, services]);
+
+  const handleBookingChange = useCallback(() => {
+    console.log('[INTERNAL_BOOKING_FORM] Booking changed, reloading time slots...');
+    setIsRefreshingSlots(true);
+    if (loadTimeSlotsRef.current) {
+      loadTimeSlotsRef.current();
+    }
+  }, []);
+
+  const handleServicesChange = useCallback(() => {
+    console.log('[INTERNAL_BOOKING_FORM] Services changed, reloading services...');
+    if (fetchServicesRef.current) {
+      fetchServicesRef.current();
+    }
+  }, []);
+
+  const handleTeamChange = useCallback(() => {
+    console.log('[INTERNAL_BOOKING_FORM] Team changed, reloading time slots...');
+    setIsRefreshingSlots(true);
+    if (loadTimeSlotsRef.current) {
+      loadTimeSlotsRef.current();
+    }
+  }, []);
+
+  const { isSubscribed: bookingsSubscribed } = useRealtimeBookings({
+    serviceId: formData.serviceId || null,
+    date: formData.date || null,
+    onBookingChange: handleBookingChange,
+    enabled: !!formData.serviceId && !!formData.date
+  });
+
+  const { isSubscribed: servicesSubscribed } = useRealtimeServices({
+    professionalId: profile?.id || null,
+    onServicesChange: handleServicesChange,
+    onTeamChange: handleTeamChange,
+    enabled: !!profile?.id
+  });
+
+  useEffect(() => {
+    if (formData.serviceId && formData.variantId && formData.date) {
+      loadTimeSlots();
+    } else {
+      // Clear time slots if variant is not selected
+      setTimeSlots([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.serviceId, formData.variantId, formData.date]);
+
+  useEffect(() => {
+    if (formData.time && formData.selectedProfessionalId && timeSlots.length > 0) {
+      const selectedSlot = timeSlots.find(slot => slot.time === formData.time);
+
+      if (!selectedSlot || !selectedSlot.isAvailable) {
+        console.log('[CONFLICT_DETECTION] Selected time slot is no longer available:', formData.time);
+        setError('O horário selecionado ficou indisponível. Por favor, selecione outro horário.');
+        setFormData(prev => ({ ...prev, time: '09:00', selectedProfessionalId: '' }));
+        setTimeout(() => setError(''), 5000);
+        return;
+      }
+
+      if (selectedSlot.availableProfessionals && selectedSlot.availableProfessionals.length > 0) {
+        const isProfessionalStillAvailable = selectedSlot.availableProfessionals.some(
+          p => p.unique_id === formData.selectedProfessionalId
+        );
+
+        if (!isProfessionalStillAvailable) {
+          console.log('[CONFLICT_DETECTION] Selected professional is no longer available:', formData.selectedProfessionalId);
+          setError('O profissional selecionado não está mais disponível para este horário. Por favor, selecione outro horário ou profissional.');
+          setFormData(prev => ({ ...prev, time: '09:00', selectedProfessionalId: '' }));
+          setTimeout(() => setError(''), 5000);
+        }
+      }
+    }
+  }, [timeSlots, formData.time, formData.selectedProfessionalId]);
 
   const fetchClients = async () => {
     if (!profile?.id) return;
@@ -112,57 +229,79 @@ export function InternalBookingForm() {
     }
   };
 
-  const fetchServices = async () => {
+  const fetchServices = useCallback(async () => {
+    console.log('[FETCH_SERVICES] Starting...');
     if (!profile?.id) return;
 
     try {
       const { data, error } = await supabase
         .from('services')
-        .select(`
-          id,
-          title,
-          price,
-          duration,
-          service_professionals(
-            id,
-            profile_id,
-            is_primary,
-            profile:profiles!service_professionals_profile_id_fkey(
-              full_name,
-              avatar_url
-            )
-          )
-        `)
+        .select('id, title, price, duration, team, professional_id')
         .eq('professional_id', profile.id)
         .order('title');
 
       if (error) throw error;
-      setServices(data || []);
+
+      // Load variants for each service
+      const servicesWithVariants = await Promise.all(
+        (data || []).map(async (service) => {
+          const { data: variants, error: variantsError } = await supabase
+            .from('service_variants')
+            .select('*')
+            .eq('service_id', service.id)
+            .order('display_order');
+
+          if (variantsError) {
+            console.error('Error loading variants for service:', service.id, variantsError);
+            return { ...service, variants: [] };
+          }
+
+          return { ...service, variants: variants || [] };
+        })
+      );
+
+      setServices(servicesWithVariants);
     } catch (err) {
       console.error('Error fetching services:', err);
     }
-  };
+  }, [profile?.id]);
 
-  const loadTimeSlots = async () => {
-    if (!formData.serviceId) return;
+  fetchServicesRef.current = fetchServices;
+
+  const loadTimeSlots = useCallback(async () => {
+    console.log('[LOAD_TIME_SLOTS] Starting...');
+    if (!formData.serviceId || !formData.variantId) return;
 
     try {
       const selectedService = services.find(s => s.id === formData.serviceId);
       if (!selectedService) return;
 
+      const selectedVariant = selectedService.variants?.find(v => v.id === formData.variantId);
+      if (!selectedVariant) {
+        console.log('[LOAD_TIME_SLOTS] Variant not found');
+        return;
+      }
+
       console.log('=== LOADING TIME SLOTS (Internal Booking Form) ===');
       console.log('Service:', selectedService.id);
       console.log('Date:', formData.date);
 
-      // Get all professionals for this service with unique_id
-      const allProfessionals = selectedService.service_professionals?.map(sp => ({
-        unique_id: sp.profile_id,
-        profile_id: sp.profile_id,
-        team_member_id: null,
-        full_name: sp.profile?.full_name || '',
-        avatar_url: sp.profile?.avatar_url || null,
-        is_primary: sp.is_primary
-      })) || [];
+      // Get all professionals for this service from team JSONB
+      const teamArray = Array.isArray(selectedService.team) ? selectedService.team : [];
+      let allProfessionals = teamArray.map((member: any) => ({
+        unique_id: member.is_primary ? member.profile_id : member.team_member_db_id,
+        profile_id: member.is_primary ? member.profile_id : null,
+        team_member_id: member.is_primary ? null : member.team_member_db_id,
+        full_name: member.name || member.full_name || '',
+        avatar_url: member.imageUrl || member.avatar_url || null,
+        is_primary: member.is_primary || false
+      }));
+
+      // NOVO: Filtrar por profissional específico se selecionado
+      if (formData.selectedProfessionalId) {
+        allProfessionals = allProfessionals.filter(p => p.profile_id === formData.selectedProfessionalId);
+        console.log('Filtering for specific professional:', formData.selectedProfessionalId);
+      }
 
       console.log('All professionals with unique_id:', allProfessionals);
 
@@ -181,12 +320,14 @@ export function InternalBookingForm() {
       console.log('Professional IDs to check:', professionalIds);
       console.log('Team Member IDs to check:', teamMemberIds);
 
-      // Fetch bookings for this service on this date
+      // Fetch bookings for this service/variant on this date
       // IMPORTANT: Only count "confirmado" bookings as they block time slots
       // Professional can create bookings even if slots show as "pendente"
+      // CRITICAL: Also fetch blocks - blocks with variant_id match affect only that variant
+      // Blocks with variant_id = NULL affect ALL variants of the service
       const { data: existingBookings, error: bookingsError } = await supabase
         .from('bookings')
-        .select('start_time, end_time, professional_id, team_member_id')
+        .select('start_time, end_time, professional_id, team_member_id, service_variant_id, booking_type')
         .eq('service_id', selectedService.id)
         .eq('status', 'confirmado')  // CRITICAL: Only confirmed bookings block slots
         .gte('start_time', startOfDayTime.toISOString())
@@ -194,8 +335,18 @@ export function InternalBookingForm() {
 
       if (bookingsError) throw bookingsError;
 
+      // Filter bookings to only those that affect this variant
+      const relevantBookings = existingBookings?.filter(booking => {
+        // Regular bookings: must match exact variant
+        if (booking.booking_type !== 'bloqueio') {
+          return booking.service_variant_id === formData.variantId;
+        }
+        // Blocks: affect this variant if variant_id matches OR if variant_id is NULL (blocks all)
+        return booking.service_variant_id === formData.variantId || booking.service_variant_id === null;
+      }) || [];
+
       const slots: TimeSlot[] = [];
-      const durationInMinutes = parseDurationToMinutes(selectedService.duration);
+      const durationInMinutes = parseDurationToMinutes(selectedVariant.duration);
 
       for (let hour = 9; hour <= 19; hour++) {
         for (let minute = 0; minute < 60; minute += 30) {
@@ -206,7 +357,7 @@ export function InternalBookingForm() {
           // Check which professionals are available for this slot
           // Only professionals WITHOUT confirmed bookings in this time slot are available
           const availableProfessionals = allProfessionals.filter(professional => {
-            const hasConflict = existingBookings?.some(booking => {
+            const hasConflict = relevantBookings.some(booking => {
               // Determine if this booking belongs to the current professional
               let isThisProfessional = false;
 
@@ -251,65 +402,39 @@ export function InternalBookingForm() {
       }
 
       console.log('Generated slots (first 5):', slots.slice(0, 5));
-      setTimeSlots(slots);
+
+      setTimeSlots(prevSlots => {
+        const newChangedSlots = new Set<string>();
+
+        if (prevSlots.length > 0) {
+          slots.forEach((newSlot, index) => {
+            const prevSlot = prevSlots[index];
+            if (prevSlot && prevSlot.isAvailable !== newSlot.isAvailable) {
+              newChangedSlots.add(newSlot.time);
+            }
+          });
+        }
+
+        if (newChangedSlots.size > 0) {
+          setRecentlyChangedSlots(newChangedSlots);
+          setTimeout(() => setRecentlyChangedSlots(new Set()), 3000);
+        }
+
+        return slots;
+      });
     } catch (err) {
       console.error('Error loading time slots:', err);
-    }
-  };
-
-  const handleCreateNewClient = async () => {
-    if (!formData.newClientName || !formData.newClientPhone) {
-      setError('Por favor, preencha o nome e telemóvel do cliente.');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
-    try {
-      const clientId = crypto.randomUUID();
-
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([{
-          id: clientId,
-          full_name: formData.newClientName,
-          mobile_number: formData.newClientPhone,
-          role: 'client'
-        }]);
-
-      if (profileError) throw profileError;
-
-      const noteContent = `Novo cliente: ${formData.newClientName}\nTelemóvel: ${formData.newClientPhone}`;
-      await supabase
-        .from('client_notes')
-        .insert({
-          client_id: clientId,
-          professional_id: profile?.id,
-          note: noteContent,
-          created_at: new Date().toISOString()
-        });
-
-      setFormData({
-        ...formData,
-        clientId: clientId,
-        newClientName: '',
-        newClientPhone: '',
-      });
-      setShowNewClientForm(false);
-      await fetchClients();
-      setSuccess(t('clients.success.clientAdded'));
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
-      console.error('Error creating client:', err);
-      setError('Erro ao criar cliente.');
     } finally {
-      setLoading(false);
+      setIsRefreshingSlots(false);
     }
-  };
+  }, [formData.serviceId, formData.date, formData.variantId, formData.selectedProfessionalId, services]);
+
+  loadTimeSlotsRef.current = loadTimeSlots;
 
   const handleTimeSlotSelect = (slot: TimeSlot) => {
     if (!slot.isAvailable || !slot.availableProfessionals || slot.availableProfessionals.length === 0) {
+      setError('Este horário não está disponível. Por favor, selecione outro horário.');
+      setTimeout(() => setError(''), 3000);
       return;
     }
 
@@ -401,20 +526,31 @@ export function InternalBookingForm() {
     }
 
     const selectedSvc = services.find(s => s.id === formData.serviceId);
-    if (selectedSvc && (!selectedSvc.service_professionals || selectedSvc.service_professionals.length === 0)) {
+    const teamArray = Array.isArray(selectedSvc?.team) ? selectedSvc.team : [];
+    if (selectedSvc && teamArray.length === 0) {
       setError('Este serviço não tem profissionais associados. Por favor, configure a equipa do serviço primeiro.');
       return;
     }
 
     // Verify the selected professional is available for this slot
     const selectedSlot = timeSlots.find(slot => slot.time === formData.time);
-    if (selectedSlot && selectedSlot.availableProfessionals && selectedSlot.availableProfessionals.length > 0) {
+    if (!selectedSlot || !selectedSlot.isAvailable) {
+      setError('O horário selecionado não está mais disponível. A página será atualizada.');
+      setTimeout(() => {
+        setIsRefreshingSlots(true);
+        loadTimeSlots();
+      }, 2000);
+      return;
+    }
+
+    if (selectedSlot.availableProfessionals && selectedSlot.availableProfessionals.length > 0) {
       const isProfessionalAvailable = selectedSlot.availableProfessionals.some(p => p.unique_id === formData.selectedProfessionalId);
       if (!isProfessionalAvailable) {
         console.error('Professional validation failed:');
         console.error('Selected ID:', formData.selectedProfessionalId);
         console.error('Available professionals:', selectedSlot.availableProfessionals);
         setError('O profissional selecionado não está disponível para este horário. Por favor, escolha outro profissional ou outro horário.');
+        setFormData(prev => ({ ...prev, selectedProfessionalId: '' }));
         return;
       }
     }
@@ -427,14 +563,18 @@ export function InternalBookingForm() {
       const selectedService = services.find(s => s.id === formData.serviceId);
       if (!selectedService) throw new Error('Serviço não encontrado');
 
+      const selectedVariant = selectedService.variants?.find(v => v.id === formData.variantId);
+      if (!selectedVariant) throw new Error('Variante não encontrada');
+
       const startTime = new Date(`${formData.date}T${formData.time}`);
-      const durationInMinutes = parseDurationToMinutes(selectedService.duration);
+      const durationInMinutes = parseDurationToMinutes(selectedVariant.duration);
       const endTime = new Date(startTime.getTime() + durationInMinutes * 60000);
 
       console.log('=== TIME CALCULATION DEBUG ===');
       console.log('Date:', formData.date);
       console.log('Time:', formData.time);
-      console.log('Duration string:', selectedService.duration);
+      console.log('Variant:', selectedVariant.name);
+      console.log('Duration string:', selectedVariant.duration);
       console.log('Duration in minutes:', durationInMinutes);
       console.log('Start time:', startTime.toISOString());
       console.log('End time:', endTime.toISOString());
@@ -475,6 +615,7 @@ export function InternalBookingForm() {
 
       const bookingData: any = {
         service_id: formData.serviceId,
+        service_variant_id: formData.variantId,
         professional_id: bookingProfessionalId,
         team_member_id: bookingTeamMemberId,
         client_id: formData.clientId,
@@ -515,8 +656,40 @@ export function InternalBookingForm() {
   return (
     <div className="max-w-3xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Criar Reserva Interna</h1>
-        <p className="text-gray-600">Criar uma reserva para um cliente existente ou novo</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Criar Reserva Interna</h1>
+            <p className="text-gray-600">Criar uma reserva para um cliente existente ou novo</p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <button
+              type="button"
+              onClick={() => setShowQuickBlockModal(true)}
+              className="flex items-center px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-lg shadow-sm transition-all text-sm font-medium"
+            >
+              <Zap className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Bloqueio Rápido</span>
+              <span className="sm:hidden">Bloqueio</span>
+            </button>
+            {bookingsSubscribed && servicesSubscribed ? (
+              <div className="flex items-center text-green-600 text-sm" title="Conectado em tempo real">
+                <Wifi className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Ao vivo</span>
+              </div>
+            ) : (
+              <div className="flex items-center text-amber-600 text-sm" title="Modo offline">
+                <WifiOff className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Offline</span>
+              </div>
+            )}
+            {isRefreshingSlots && (
+              <div className="flex items-center text-blue-600 text-sm">
+                <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                <span className="hidden sm:inline">Atualizando...</span>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -542,86 +715,43 @@ export function InternalBookingForm() {
               </label>
               <button
                 type="button"
-                onClick={() => setShowNewClientForm(!showNewClientForm)}
+                onClick={() => navigate('/professional/clients')}
                 className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center"
               >
-                {showNewClientForm ? (
-                  <>
-                    <X className="h-4 w-4 mr-1" />
-                    Cancelar
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4 mr-1" />
-                    {t('clients.addClient')}
-                  </>
-                )}
+                <Plus className="h-4 w-4 mr-1" />
+                Adicionar Cliente
               </button>
             </div>
 
-            {showNewClientForm ? (
-              <div className="space-y-4 p-4 bg-blue-50 rounded-lg">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('clients.form.name')}
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.newClientName}
-                    onChange={(e) => setFormData({ ...formData, newClientName: e.target.value })}
-                    className="block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                    placeholder="Nome completo"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Telemóvel
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.newClientPhone}
-                    onChange={(e) => setFormData({ ...formData, newClientPhone: e.target.value })}
-                    className="block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                    placeholder="+351912345678"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleCreateNewClient}
-                  disabled={loading}
-                  className="w-full btn-gradient py-2"
-                >
-                  {loading ? t('common.saving') : t('clients.addClient')}
-                </button>
+            <div className="relative mb-2">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
               </div>
-            ) : (
-              <>
-                <div className="relative mb-2">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Search className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    value={clientSearch}
-                    onChange={(e) => setClientSearch(e.target.value)}
-                    className="block w-full pl-10 rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                    placeholder="Pesquisar cliente..."
-                  />
-                </div>
-                <select
-                  required
-                  value={formData.clientId}
-                  onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
-                  className="block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                >
-                  <option value="">Selecione um cliente</option>
-                  {filteredClients.map(client => (
-                    <option key={client.id} value={client.id}>
-                      {client.full_name} - {client.mobile_number}
-                    </option>
-                  ))}
-                </select>
-              </>
+              <input
+                type="text"
+                value={clientSearch}
+                onChange={(e) => setClientSearch(e.target.value)}
+                className="block w-full pl-10 rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                placeholder="Pesquisar cliente..."
+              />
+            </div>
+            <select
+              required
+              value={formData.clientId}
+              onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+            >
+              <option value="">Selecione um cliente</option>
+              {filteredClients.map(client => (
+                <option key={client.id} value={client.id}>
+                  {client.full_name} - {client.mobile_number}
+                </option>
+              ))}
+            </select>
+            {filteredClients.length === 0 && (
+              <p className="mt-2 text-sm text-gray-500">
+                Nenhum cliente encontrado. Use o botão "Adicionar Cliente" acima para criar um novo.
+              </p>
             )}
           </div>
 
@@ -634,72 +764,80 @@ export function InternalBookingForm() {
               value={formData.serviceId}
               onChange={(e) => {
                 const newServiceId = e.target.value;
-                setFormData({ ...formData, serviceId: newServiceId, selectedProfessionalId: '', time: '09:00' });
+                setFormData({ ...formData, serviceId: newServiceId, variantId: '', selectedProfessionalId: '', time: '09:00' });
               }}
               className="block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
             >
               <option value="">Selecione um serviço</option>
               {services.map(service => (
                 <option key={service.id} value={service.id}>
-                  {service.title} - {formatCurrency(service.price)} - {service.duration}
+                  {service.title}
                 </option>
               ))}
             </select>
           </div>
 
-          {formData.serviceId && selectedService && (
-            <>
-              {selectedService.service_professionals && selectedService.service_professionals.length > 0 ? (
-                <div className="p-5 bg-gradient-to-r from-cyan-50 to-blue-50 border-2 border-cyan-300 rounded-xl shadow-sm">
-                  <label className="block text-base font-semibold text-gray-800 mb-2 flex items-center">
-                    <User className="h-5 w-5 mr-2 text-blue-600" />
-                    Profissionais Disponíveis ({selectedService.service_professionals.length})
-                  </label>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Os horários abaixo mostram a disponibilidade de todos os profissionais. Selecione um horário para escolher o profissional.
-                  </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {selectedService.service_professionals.map((sp) => (
-                      <div
-                        key={sp.id}
-                        className="flex flex-col items-center p-3 rounded-xl border-2 border-gray-200 bg-white"
-                      >
-                        <div className="relative">
-                          <img
-                            src={sp.profile?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(sp.profile?.full_name || '')}&background=random`}
-                            alt={sp.profile?.full_name}
-                            className="h-12 w-12 rounded-full object-cover border-2 border-white shadow-sm"
-                          />
-                          {sp.is_primary && (
-                            <div className="absolute -bottom-1 -right-1 bg-blue-600 h-4 w-4 rounded-full border-2 border-white flex items-center justify-center">
-                              <CheckCircle className="h-2.5 w-2.5 text-white" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-center mt-2">
-                          <div className="font-medium text-gray-900 text-xs">{sp.profile?.full_name}</div>
-                          {sp.is_primary && (
-                            <span className="inline-flex items-center text-[10px] text-blue-600 font-semibold mt-0.5">
-                              Principal
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="rounded-xl bg-amber-50 p-4 border-2 border-amber-200">
-                  <div className="flex items-start">
-                    <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0" />
-                    <div className="text-sm text-amber-800">
-                      <p className="font-semibold mb-1">Este serviço não tem profissionais configurados</p>
-                      <p>Por favor, vá para a página de <a href="/professional/team" className="underline font-semibold">Gestão de Colaboradores</a> para adicionar profissionais à equipa deste serviço antes de criar reservas.</p>
-                    </div>
-                  </div>
-                </div>
+          {formData.serviceId && selectedService?.variants && selectedService.variants.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Variante *
+              </label>
+              <select
+                required
+                value={formData.variantId}
+                onChange={(e) => {
+                  setFormData({ ...formData, variantId: e.target.value, selectedProfessionalId: '', time: '09:00' });
+                }}
+                className="block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                disabled={!formData.serviceId}
+              >
+                <option value="">Selecione uma variante</option>
+                {selectedService.variants.map(variant => (
+                  <option key={variant.id} value={variant.id}>
+                    {variant.name} - {formatCurrency(variant.price)} - {variant.duration}
+                  </option>
+                ))}
+              </select>
+              {selectedService.variants.length === 0 && (
+                <p className="mt-2 text-sm text-red-600">
+                  Este serviço não tem variantes configuradas. Por favor, adicione variantes antes de criar reservas.
+                </p>
               )}
-            </>
+            </div>
+          )}
+
+          {formData.serviceId && selectedService && selectedService.team && Array.isArray(selectedService.team) && selectedService.team.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                <User className="h-4 w-4 mr-2 text-blue-600" />
+                Profissional (Opcional)
+              </label>
+              <select
+                value={formData.selectedProfessionalId}
+                onChange={(e) => {
+                  setFormData({ ...formData, selectedProfessionalId: e.target.value, time: '09:00' });
+                }}
+                className="block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+              >
+                <option value="">Todos os profissionais ({selectedService.team.length})</option>
+                {selectedService.team
+                  .sort((a: any, b: any) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0))
+                  .map((member: any) => {
+                    const profileId = member.is_primary ? member.profile_id : member.team_member_db_id;
+                    const name = member.name || member.full_name || '';
+                    return (
+                      <option key={profileId} value={profileId}>
+                        {name}{member.is_primary ? ' ⭐ Principal' : ''}
+                      </option>
+                    );
+                  })}
+              </select>
+              <p className="mt-2 text-xs text-gray-500">
+                {formData.selectedProfessionalId
+                  ? 'Mostrando apenas horários deste profissional'
+                  : 'Mostrando horários de todos os profissionais disponíveis'}
+              </p>
+            </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -732,6 +870,7 @@ export function InternalBookingForm() {
                   <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-60 overflow-y-auto p-2 bg-gray-50 rounded-lg">
                     {timeSlots.map((slot, index) => {
                       const isSelected = formData.time === slot.time;
+                      const hasRecentlyChanged = recentlyChangedSlots.has(slot.time);
                       return (
                         <button
                           key={index}
@@ -739,14 +878,19 @@ export function InternalBookingForm() {
                           disabled={!slot.isAvailable}
                           onClick={() => handleTimeSlotSelect(slot)}
                           className={`
-                            relative py-2 px-2 rounded-lg text-sm font-medium transition-all duration-200
+                            relative py-2 px-2 rounded-lg text-sm font-medium transition-all duration-300
                             ${isSelected
                               ? 'bg-blue-600 text-white shadow-lg scale-105'
                               : slot.isAvailable
-                                ? 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-200 hover:scale-102'
-                                : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                                ? hasRecentlyChanged
+                                  ? 'bg-green-100 text-gray-700 hover:bg-blue-50 border-2 border-green-400 animate-pulse'
+                                  : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-200 hover:scale-102'
+                                : hasRecentlyChanged
+                                  ? 'bg-red-100 text-gray-400 cursor-not-allowed border-2 border-red-300'
+                                  : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
                             }
                           `}
+                          title={hasRecentlyChanged ? 'Este horário acabou de mudar!' : ''}
                         >
                           <div className="flex flex-col items-center">
                             <span className={isSelected ? 'font-bold' : ''}>{slot.time}</span>
@@ -761,9 +905,10 @@ export function InternalBookingForm() {
                     })}
                   </div>
                 </div>
-              ) : formData.serviceId ? (
+              ) : formData.serviceId && formData.variantId ? (
                 <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200">
-                  Configure a equipa do serviço primeiro para ver os horários disponíveis.
+                  <p className="font-medium mb-1">Equipa não configurada</p>
+                  <p className="text-xs">Vá para Serviços → Editar → Equipa para configurar a equipa deste serviço.</p>
                 </div>
               ) : (
                 <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
@@ -774,17 +919,24 @@ export function InternalBookingForm() {
           </div>
 
           <div>
-            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
-              Notas (opcional)
-            </label>
-            <textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              rows={3}
-              className="block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-              placeholder="Informações adicionais sobre a reserva..."
-            />
+            <button
+              type="button"
+              onClick={() => setShowNotesField(!showNotesField)}
+              className="flex items-center text-sm text-blue-600 hover:text-blue-700 font-medium mb-2"
+            >
+              <Plus className={`h-4 w-4 mr-1 transition-transform ${showNotesField ? 'rotate-45' : ''}`} />
+              {showNotesField ? 'Ocultar notas' : 'Adicionar notas (opcional)'}
+            </button>
+            {showNotesField && (
+              <textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                rows={3}
+                className="block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                placeholder="Informações adicionais sobre a reserva..."
+              />
+            )}
           </div>
 
           {formData.clientId && formData.serviceId && selectedService && (
@@ -793,10 +945,22 @@ export function InternalBookingForm() {
               <div className="space-y-2 text-sm text-blue-700">
                 <p><strong>{t('bookings.info.client')}:</strong> {clients.find(c => c.id === formData.clientId)?.full_name}</p>
                 <p><strong>Serviço:</strong> {selectedService.title}</p>
+                {formData.variantId && selectedService.variants && selectedService.variants.find(v => v.id === formData.variantId) && (
+                  <p><strong>Variante:</strong> {selectedService.variants.find(v => v.id === formData.variantId)!.name}</p>
+                )}
                 <p><strong>Data:</strong> {format(new Date(formData.date), 'PPP', { locale: pt })}</p>
                 <p><strong>Hora:</strong> {formData.time}</p>
-                <p><strong>Duração:</strong> {selectedService.duration}</p>
-                <p><strong>Preço:</strong> {formatCurrency(selectedService.price)}</p>
+                {formData.variantId && selectedService.variants && selectedService.variants.find(v => v.id === formData.variantId) ? (
+                  <>
+                    <p><strong>Duração:</strong> {selectedService.variants.find(v => v.id === formData.variantId)!.duration}</p>
+                    <p><strong>Preço:</strong> {formatCurrency(selectedService.variants.find(v => v.id === formData.variantId)!.price)}</p>
+                  </>
+                ) : (
+                  <>
+                    <p><strong>Duração:</strong> {selectedService.duration}</p>
+                    <p><strong>Preço:</strong> {formatCurrency(selectedService.price)}</p>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -893,6 +1057,17 @@ export function InternalBookingForm() {
           </div>
         </div>
       )}
+
+      <QuickBlockModal
+        isOpen={showQuickBlockModal}
+        onClose={() => setShowQuickBlockModal(false)}
+        onSuccess={() => {
+          setShowQuickBlockModal(false);
+          loadTimeSlots();
+        }}
+        preSelectedDate={formData.date}
+        preSelectedServiceId={formData.serviceId}
+      />
     </div>
   );
 }

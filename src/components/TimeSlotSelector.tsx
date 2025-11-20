@@ -1,4 +1,4 @@
-import { Clock, Sunrise, Sun, Moon, Users, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Clock, Sunrise, Sun, Moon, Users, AlertTriangle, CheckCircle, UtensilsCrossed, Coffee, Ban } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getCapacityColorClasses, getCapacityLabel } from '../utils/availability';
 
@@ -9,6 +9,8 @@ interface TimeSlot {
   availableCapacity?: number;
   utilizationPercentage?: number;
   blockedReason?: string;
+  blockReason?: string;
+  isBlockedSlot?: boolean;
   availableProfessionals?: any[];
 }
 
@@ -69,6 +71,37 @@ export function TimeSlotSelector({
 
   const isTimeInPeriod = (time: string, start: string, end: string) => {
     return time >= start && time < end;
+  };
+
+  const getBlockIcon = (blockReason?: string) => {
+    if (!blockReason) return Ban;
+
+    const lowerReason = blockReason.toLowerCase();
+    if (lowerReason.includes('almoço') || lowerReason.includes('almoco')) return UtensilsCrossed;
+    if (lowerReason.includes('pausa') || lowerReason.includes('café') || lowerReason.includes('cafe')) return Coffee;
+    return Ban;
+  };
+
+  const getBlockColor = (blockReason?: string) => {
+    if (!blockReason) return 'from-red-100 to-red-200 border-red-300';
+
+    const lowerReason = blockReason.toLowerCase();
+    if (lowerReason.includes('almoço') || lowerReason.includes('almoco')) {
+      return 'from-orange-100 to-amber-200 border-orange-300';
+    }
+    if (lowerReason.includes('pausa') || lowerReason.includes('café') || lowerReason.includes('cafe')) {
+      return 'from-amber-100 to-yellow-200 border-amber-300';
+    }
+    return 'from-yellow-100 to-orange-200 border-yellow-300';
+  };
+
+  const getBlockTextColor = (blockReason?: string) => {
+    if (!blockReason) return 'text-red-500';
+
+    const lowerReason = blockReason.toLowerCase();
+    if (lowerReason.includes('almoço') || lowerReason.includes('almoco')) return 'text-orange-700';
+    if (lowerReason.includes('pausa') || lowerReason.includes('café') || lowerReason.includes('cafe')) return 'text-amber-700';
+    return 'text-yellow-700';
   };
 
   const getFilteredSlots = () => {
@@ -252,6 +285,13 @@ export function TimeSlotSelector({
             const isFullyBooked = availableCount === 0;
             const utilizationPct = slot.utilizationPercentage || 0;
 
+            // Determinar se é bloqueio ou esgotamento
+            const isBlock = slot.isBlockedSlot || false;
+            const blockReasonText = slot.blockReason || slot.blockedReason;
+            const BlockIcon = isBlock ? getBlockIcon(blockReasonText) : AlertTriangle;
+            const blockColorClasses = isBlock ? getBlockColor(blockReasonText) : 'from-red-100 to-red-200 border-red-300';
+            const blockTextColor = isBlock ? getBlockTextColor(blockReasonText) : 'text-red-500';
+
             return (
               <button
                 key={index}
@@ -270,12 +310,14 @@ export function TimeSlotSelector({
                     ? 'bg-gradient-to-br from-blue-600 to-cyan-600 text-white shadow-xl scale-105 ring-2 ring-blue-400 ring-offset-2 -translate-y-1'
                     : !isFullyBooked
                       ? 'bg-white text-gray-700 hover:bg-gradient-to-br hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700 hover:shadow-lg hover:scale-105 hover:-translate-y-0.5 border-2 border-gray-200 hover:border-blue-300'
-                      : 'bg-gradient-to-br from-red-100 to-red-200 text-red-500 cursor-not-allowed border-2 border-red-300 opacity-70'
+                      : `bg-gradient-to-br ${blockColorClasses} ${blockTextColor} cursor-not-allowed border-2 opacity-70`
                   }
                 `}
                 title={
                   isFullyBooked
-                    ? slot.blockedReason || `❌ ESGOTADO - Horário ${slot.time} já não aceita mais reservas (0/${slotTotalCapacity} vagas)`
+                    ? isBlock
+                      ? `⏸️ INDISPONÍVEL - ${blockReasonText}`
+                      : slot.blockedReason || `❌ ESGOTADO - Horário ${slot.time} já não aceita mais reservas (0/${slotTotalCapacity} vagas)`
                     : `✅ DISPONÍVEL - ${availableCount}/${slotTotalCapacity} ${availableCount === 1 ? 'vaga disponível' : 'vagas disponíveis'} às ${slot.time}`
                 }
               >
@@ -299,9 +341,13 @@ export function TimeSlotSelector({
                           <span>{availableCount}/{slotTotalCapacity}</span>
                         </div>
                       ) : (
-                        <div className="flex items-center space-x-1 px-2 py-1 rounded-full text-[9px] sm:text-[10px] font-bold bg-red-100 text-red-700 ring-1 ring-red-300">
-                          <AlertTriangle className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                          <span className="font-extrabold">ESGOTADO</span>
+                        <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-[9px] sm:text-[10px] font-bold ${
+                          isBlock
+                            ? `bg-${blockReasonText?.toLowerCase().includes('almoço') || blockReasonText?.toLowerCase().includes('almoco') ? 'orange' : blockReasonText?.toLowerCase().includes('pausa') ? 'amber' : 'yellow'}-100 ${blockTextColor} ring-1 ring-${blockReasonText?.toLowerCase().includes('almoço') || blockReasonText?.toLowerCase().includes('almoco') ? 'orange' : blockReasonText?.toLowerCase().includes('pausa') ? 'amber' : 'yellow'}-300`
+                            : 'bg-red-100 text-red-700 ring-1 ring-red-300'
+                        }`}>
+                          <BlockIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                          <span className="font-extrabold">{isBlock && blockReasonText ? blockReasonText.toUpperCase() : 'ESGOTADO'}</span>
                         </div>
                       )}
                     </>

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { format, addDays, setHours, setMinutes, parseISO, isAfter, isBefore, startOfDay } from 'date-fns';
 import { pt } from 'date-fns/locale';
-import { Calendar, Clock, Euro, AlertCircle, CheckCircle, User, Mail, Phone, MapPin, XCircle } from 'lucide-react';
+import { Calendar, Clock, Euro, AlertCircle, CheckCircle, User, Mail, Phone, MapPin, XCircle, Info } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { supabase } from '../../lib/supabase';
 import { ServiceVariant, ServiceProfessional } from '../../types/service';
@@ -11,6 +11,7 @@ import { formatCurrency } from '../../utils/currency';
 import { parseDurationToMinutes } from '../../utils/date';
 import { TimeSlotSelector } from '../../components/TimeSlotSelector';
 import { BookingConfirmationModal } from '../../components/BookingConfirmationModal';
+import { InfoCard } from '../../components/InfoCard';
 
 interface Service {
   id: string;
@@ -42,6 +43,8 @@ interface TimeSlot {
   totalCapacity?: number;
   availableCapacity?: number;
   utilizationPercentage?: number;
+  blockReason?: string;
+  isBlockedSlot?: boolean;
   availableProfessionals: {
     unique_id: string;
     profile_id: string | null;
@@ -259,11 +262,34 @@ export function BookingForm() {
               console.error('[REALTIME] Error fetching slot details:', detailsError);
             }
 
-            const availableCount = matrixSlot.available_count ?? matrixSlot.available ?? 0;
+            let availableCount = matrixSlot.available_count ?? matrixSlot.available ?? 0;
             const totalCount = matrixSlot.total_capacity ?? matrixSlot.total ?? 0;
-            const professionals = slotDetails || [];
+            let professionals = slotDetails || [];
+            const blockReason = matrixSlot.block_reason || null;
 
-            console.log(`[SLOT ${timeOnly}] Matrix: ${availableCount}/${totalCount}, Professionals: ${professionals.length}, IsAvailable: ${availableCount > 0}`);
+            // NOVO: Filtrar por profissional específico se selecionado
+            if (formData.selectedProfessionalId) {
+              professionals = professionals.filter((p: any) => p.profile_id === formData.selectedProfessionalId);
+              availableCount = professionals.length;
+            }
+
+            console.log(`[SLOT ${timeOnly}] Matrix: ${availableCount}/${totalCount}, Professionals: ${professionals.length}, IsAvailable: ${availableCount > 0}, BlockReason: ${blockReason}`);
+
+            // Determinar mensagem de bloqueio
+            let slotBlockReason: string | undefined;
+            let isBlockedSlot = false;
+
+            if (availableCount === 0) {
+              if (blockReason) {
+                // Horário bloqueado (ex: Almoço, Pausa, Reunião)
+                slotBlockReason = blockReason;
+                isBlockedSlot = true;
+              } else {
+                // Horário esgotado por reservas
+                slotBlockReason = 'Horário já esgotado - 0 vagas disponíveis';
+                isBlockedSlot = false;
+              }
+            }
 
             slots.push({
               time: timeOnly,
@@ -272,7 +298,8 @@ export function BookingForm() {
               availableCapacity: availableCount,
               utilizationPercentage: totalCount > 0 ? Math.round(((totalCount - availableCount) / totalCount) * 100) : 0,
               availableProfessionals: professionals,
-              blockedReason: availableCount === 0 ? 'Horário já esgotado - 0 vagas disponíveis' : undefined
+              blockReason: slotBlockReason,
+              isBlockedSlot: isBlockedSlot
             });
           }
         }
@@ -691,17 +718,32 @@ export function BookingForm() {
     <div className="max-w-4xl mx-auto">
       <div className="mb-6 sm:mb-8 text-center">
         <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent mb-2 sm:mb-3 px-2">Reservar Serviço</h1>
-        <p className="text-sm sm:text-base text-gray-600 px-4">As reservas da sua conta.</p>
+        <p className="text-sm sm:text-base text-gray-600 px-4">
+          {profile ? 'As reservas da sua conta.' : 'Explore a disponibilidade em tempo real e reserve o melhor horário para si.'}
+        </p>
         {!profile && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mt-3 sm:mt-4">
-            <p className="text-xs sm:text-sm text-blue-800">
-              Já tem conta?{' '}
-              <Link to="/auth/login" className="font-semibold underline hover:text-blue-900">
-                Faça login
-              </Link>{' '}
-              para gerir as suas reservas facilmente.
-            </p>
-          </div>
+          <InfoCard
+            variant="subtle"
+            dismissible={true}
+            storageKey="public-calendar-info-seen"
+            className="mt-3 sm:mt-4 p-3 sm:p-4"
+          >
+            <div className="flex items-start space-x-2 sm:space-x-3 pr-8">
+              <CheckCircle className="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+              <div className="text-left">
+                <p className="text-xs sm:text-sm font-semibold text-gray-800 mb-1">
+                  Calendário Público
+                </p>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  Explore a disponibilidade em tempo real sem precisar de conta.{' '}
+                  <Link to="/auth/login" className="font-medium text-blue-600 hover:text-blue-700 underline">
+                    Faça login
+                  </Link>{' '}
+                  para gerir as suas reservas.
+                </p>
+              </div>
+            </div>
+          </InfoCard>
         )}
       </div>
 
@@ -734,20 +776,55 @@ export function BookingForm() {
         )}
 
         {service.service_professionals && service.service_professionals.length > 1 && (
-          <div className="mb-4 p-5 bg-gradient-to-r from-cyan-50 to-blue-50 border-2 border-cyan-300 rounded-xl shadow-sm">
-            <label className="block text-base font-semibold text-gray-800 mb-2 flex items-center">
-              <User className="h-5 w-5 mr-2 text-blue-600" />
-              Profissionais Disponíveis
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+              <User className="h-4 w-4 mr-2 text-blue-600" />
+              Selecione o Profissional (Opcional)
             </label>
-            <p className="text-sm text-gray-600 mb-4">
-              Este serviço tem <strong>{service.service_professionals.length} profissionais</strong> na equipa. Clique num profissional para o selecionar, depois escolha o horário disponível.
+            <select
+              value={formData.selectedProfessionalId}
+              onChange={(e) => {
+                setFormData(prev => ({
+                  ...prev,
+                  selectedProfessionalId: e.target.value
+                }));
+                setError('');
+              }}
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm mb-3"
+            >
+              <option value="">Todos os profissionais ({service.service_professionals.length})</option>
+              {service.service_professionals
+                .sort((a, b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0))
+                .map((sp) => (
+                  <option key={sp.id} value={sp.profile_id}>
+                    {sp.profile?.full_name}{sp.is_primary ? ' ⭐ Principal' : ''}
+                  </option>
+                ))}
+            </select>
+            <p className="text-xs text-gray-500 mb-4">
+              {formData.selectedProfessionalId
+                ? 'Mostrando apenas horários deste profissional'
+                : 'Mostrando horários de todos os profissionais disponíveis'}
             </p>
-            <div className="bg-blue-100 border border-blue-300 rounded-lg p-3 mb-4 flex items-start">
-              <AlertCircle className="h-5 w-5 text-blue-700 mr-2 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-blue-800">
-                <strong>Como funciona:</strong> Clique num profissional para o selecionar (aparece badge verde). Depois escolha um horário disponível. Se o profissional estiver disponível para esse horário, a seleção é confirmada automaticamente.
+
+            <div className="p-5 bg-gradient-to-r from-cyan-50 to-blue-50 border-2 border-cyan-300 rounded-xl shadow-sm">
+              <label className="block text-base font-semibold text-gray-800 mb-2 flex items-center">
+                <User className="h-5 w-5 mr-2 text-blue-600" />
+                Equipa do Serviço
+              </label>
+              <p className="text-sm text-gray-600 mb-4">
+                Este serviço tem <strong>{service.service_professionals.length} profissionais</strong> na equipa.
               </p>
-            </div>
+            <InfoCard variant="minimal" className="mb-4 pl-3 py-2">
+              <InfoCard.Content>
+                <span className="text-gray-700">
+                  <strong className="text-gray-800">Como funciona:</strong> Selecione um profissional, depois escolha o horário disponível.
+                  <InfoCard.Tooltip content="Se o profissional estiver disponível para o horário escolhido, a seleção é confirmada automaticamente. Caso contrário, poderá escolher outro profissional disponível.">
+                    <Info className="inline h-3 w-3 ml-1 text-blue-500" />
+                  </InfoCard.Tooltip>
+                </span>
+              </InfoCard.Content>
+            </InfoCard>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {service.service_professionals.map((sp) => {
                 const isSelected = formData.selectedProfessionalId === sp.profile_id;
@@ -804,6 +881,7 @@ export function BookingForm() {
                 );
               })}
             </div>
+            </div>
           </div>
         )}
 
@@ -816,12 +894,16 @@ export function BookingForm() {
             <p className="text-sm text-gray-600 mb-4">
               Este serviço tem <strong>{service.team.length} profissionais</strong> na equipa. Clique num profissional para o selecionar, depois escolha o horário disponível.
             </p>
-            <div className="bg-blue-100 border border-blue-300 rounded-lg p-3 mb-4 flex items-start">
-              <AlertCircle className="h-5 w-5 text-blue-700 mr-2 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-blue-800">
-                <strong>Como funciona:</strong> Clique num profissional para o selecionar (aparece badge verde). Depois escolha um horário disponível. Se o profissional estiver disponível para esse horário, a seleção é confirmada automaticamente.
-              </p>
-            </div>
+            <InfoCard variant="minimal" className="mb-4 pl-3 py-2">
+              <InfoCard.Content>
+                <span className="text-gray-700">
+                  <strong className="text-gray-800">Como funciona:</strong> Selecione um profissional, depois escolha o horário disponível.
+                  <InfoCard.Tooltip content="Se o profissional estiver disponível para o horário escolhido, a seleção é confirmada automaticamente. Caso contrário, poderá escolher outro profissional disponível.">
+                    <Info className="inline h-3 w-3 ml-1 text-blue-500" />
+                  </InfoCard.Tooltip>
+                </span>
+              </InfoCard.Content>
+            </InfoCard>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {service.team.map((member: any) => {
                 const isSelected = formData.selectedProfessionalId === member.unique_id;
@@ -1028,40 +1110,39 @@ export function BookingForm() {
           </div>
         ) : (
           <>
-            <div className="space-y-3">
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-4 shadow-sm">
-                <p className="text-sm text-green-900 font-bold flex items-center mb-1">
-                  <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
-                  Horários Agregados de Todos os Profissionais
-                </p>
-                <p className="text-xs text-green-700 ml-7">
-                  Este serviço tem <strong>{totalServiceCapacity} {totalServiceCapacity === 1 ? 'profissional' : 'profissionais'}</strong>. Os horários mostram quantos profissionais estão disponíveis.
-                </p>
+            <InfoCard
+              variant="subtle"
+              dismissible={true}
+              storageKey="booking-capacity-info-seen"
+              collapsible={true}
+              defaultCollapsed={false}
+              className="p-3 sm:p-4"
+            >
+              <div className="pr-16">
+                <InfoCard.Header icon={CheckCircle} color="emerald">
+                  Sistema de Disponibilidade
+                </InfoCard.Header>
+                <InfoCard.Content>
+                  <p className="mb-2">
+                    Este serviço tem <strong>{totalServiceCapacity} {totalServiceCapacity === 1 ? 'profissional' : 'profissionais'}</strong>. Os horários bloqueiam apenas quando todos estão ocupados com reservas confirmadas.
+                  </p>
+                  <div className="flex items-center space-x-3 mt-2">
+                    <div className="flex items-center space-x-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+                      <span className="text-xs text-gray-600">Disponível</span>
+                    </div>
+                    <div className="flex items-center space-x-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
+                      <span className="text-xs text-gray-600">Parcial</span>
+                    </div>
+                    <div className="flex items-center space-x-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                      <span className="text-xs text-gray-600">Esgotado</span>
+                    </div>
+                  </div>
+                </InfoCard.Content>
               </div>
-              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-300 rounded-lg p-4 shadow-sm">
-                <p className="text-sm text-blue-900 font-bold flex items-center mb-1">
-                  <AlertCircle className="h-5 w-5 mr-2 text-blue-600" />
-                  Sistema de Bloqueio Inteligente
-                </p>
-                <p className="text-xs text-blue-700 ml-7">
-                  Quando todos os {totalServiceCapacity} {totalServiceCapacity === 1 ? 'profissional estiver ocupado' : 'profissionais estiverem ocupados'}, o horário fica <strong>bloqueado</strong>. Apenas reservas <strong>confirmadas</strong> bloqueiam horários.
-                </p>
-                <div className="mt-2 ml-7 flex items-start space-x-2">
-                  <div className="flex items-center space-x-1.5">
-                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                    <span className="text-xs text-blue-800">Todos livres</span>
-                  </div>
-                  <div className="flex items-center space-x-1.5">
-                    <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                    <span className="text-xs text-blue-800">Alguns ocupados</span>
-                  </div>
-                  <div className="flex items-center space-x-1.5">
-                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                    <span className="text-xs text-blue-800">Esgotado (0/{totalServiceCapacity})</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            </InfoCard>
             <TimeSlotSelector
               timeSlots={timeSlots}
               selectedTime={formData.time}

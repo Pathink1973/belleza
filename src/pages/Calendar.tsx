@@ -23,8 +23,13 @@ import {
   Eye,
   EyeOff,
   LayoutGrid,
-  List
+  List,
+  UtensilsCrossed,
+  Coffee,
+  Users as UsersIcon,
+  Ban
 } from 'lucide-react';
+import { InfoCard } from '../components/InfoCard';
 import { formatCurrency } from '../utils/currency';
 import { confirmBookingWithCapacityCheck } from '../utils/availability';
 
@@ -40,6 +45,8 @@ interface Booking {
   start_time: string;
   end_time: string;
   status: 'pendente' | 'confirmado' | 'concluído' | 'cancelado';
+  booking_type?: 'reserva' | 'bloqueio';
+  block_reason?: string;
   service: {
     title: string;
     price: number;
@@ -57,6 +64,32 @@ interface CalendarNote {
   note: string;
   is_opt_in: boolean;
 }
+
+const getBlockIcon = (blockReason?: string) => {
+  if (!blockReason) return Ban;
+
+  const lowerReason = blockReason.toLowerCase();
+  if (lowerReason.includes('almoço') || lowerReason.includes('almoco')) return UtensilsCrossed;
+  if (lowerReason.includes('pausa') || lowerReason.includes('café') || lowerReason.includes('cafe')) return Coffee;
+  if (lowerReason.includes('reunião') || lowerReason.includes('reuniao')) return UsersIcon;
+  return Ban;
+};
+
+const getBlockColorClasses = (blockReason?: string) => {
+  if (!blockReason) return { bg: 'bg-amber-100', border: 'border-amber-400', gradient: 'from-amber-50 to-orange-50', text: 'text-amber-600', badge: 'bg-amber-100 text-amber-800' };
+
+  const lowerReason = blockReason.toLowerCase();
+  if (lowerReason.includes('almoço') || lowerReason.includes('almoco')) {
+    return { bg: 'bg-orange-100', border: 'border-orange-400', gradient: 'from-orange-50 to-amber-50', text: 'text-orange-700', badge: 'bg-orange-100 text-orange-800' };
+  }
+  if (lowerReason.includes('pausa') || lowerReason.includes('café') || lowerReason.includes('cafe')) {
+    return { bg: 'bg-amber-100', border: 'border-amber-400', gradient: 'from-amber-50 to-yellow-50', text: 'text-amber-700', badge: 'bg-amber-100 text-amber-800' };
+  }
+  if (lowerReason.includes('reunião') || lowerReason.includes('reuniao')) {
+    return { bg: 'bg-blue-100', border: 'border-blue-400', gradient: 'from-blue-50 to-cyan-50', text: 'text-blue-700', badge: 'bg-blue-100 text-blue-800' };
+  }
+  return { bg: 'bg-yellow-100', border: 'border-yellow-400', gradient: 'from-yellow-50 to-orange-50', text: 'text-yellow-700', badge: 'bg-yellow-100 text-yellow-800' };
+};
 
 export function Calendar() {
   const { user } = useAuthStore();
@@ -113,6 +146,8 @@ export function Calendar() {
         .from('bookings')
         .select(`
           *,
+          booking_type,
+          block_reason,
           service:services(title, price, duration),
           client:profiles!bookings_client_id_fkey(
             full_name,
@@ -191,6 +226,8 @@ export function Calendar() {
         .from('bookings')
         .select(`
           *,
+          booking_type,
+          block_reason,
           service:services(title, price, duration),
           client:profiles!bookings_client_id_fkey(
             full_name,
@@ -500,26 +537,26 @@ export function Calendar() {
 
       {!showArchived && viewMode === 'day' && (
         <div className="space-y-2 sm:space-y-3">
-          <div className="bg-blue-50 border border-blue-200 rounded-md sm:rounded-lg p-2 sm:p-4">
+          <InfoCard variant="subtle" className="p-2 sm:p-3">
             <div className="flex items-center space-x-1 sm:space-x-2">
-              <Archive className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" />
-              <p className="text-[10px] leading-tight sm:text-sm text-blue-800">
-                <strong>Exibindo apenas reservas ativas:</strong> {activeBookingsCount} {activeBookingsCount === 1 ? 'reserva' : 'reservas'} pendente{activeBookingsCount !== 1 ? 's' : ''} ou confirmada{activeBookingsCount !== 1 ? 's' : ''}.
-                {archivedCount > 0 && ` ${archivedCount} reserva${archivedCount !== 1 ? 's' : ''} arquivada${archivedCount !== 1 ? 's' : ''} oculta${archivedCount !== 1 ? 's' : ''}.`}
+              <Archive className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600 flex-shrink-0" />
+              <p className="text-[10px] leading-tight sm:text-xs text-gray-700">
+                <strong className="text-gray-800">Reservas ativas:</strong> {activeBookingsCount} {activeBookingsCount === 1 ? 'reserva' : 'reservas'}.
+                {archivedCount > 0 && ` ${archivedCount} arquivada${archivedCount !== 1 ? 's' : ''} oculta${archivedCount !== 1 ? 's' : ''}.`}
               </p>
             </div>
-          </div>
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300 rounded-md sm:rounded-lg p-2 sm:p-4">
-            <div className="flex items-start space-x-1 sm:space-x-2">
-              <CheckCircle className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-green-600 flex-shrink-0 mt-0.5" />
-              <div className="text-[10px] leading-tight sm:text-sm text-green-900">
-                <p className="font-semibold mb-0.5">Bloqueio</p>
-                <p className="text-green-800">
-                  <strong>Confirmadas</strong> bloqueiam. <strong>Pendentes</strong> NÃO bloqueiam.
+          </InfoCard>
+          <InfoCard variant="subtle" dismissible={true} storageKey="calendar-blocking-info-seen" className="p-2 sm:p-3">
+            <div className="flex items-start space-x-1 sm:space-x-2 pr-6">
+              <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+              <div className="text-[10px] leading-tight sm:text-xs text-gray-700">
+                <p className="font-semibold mb-0.5 text-gray-800">Bloqueio Inteligente</p>
+                <p>
+                  <strong className="text-gray-800">Confirmadas</strong> bloqueiam horários. <strong className="text-gray-800">Pendentes</strong> não bloqueiam.
                 </p>
               </div>
             </div>
-          </div>
+          </InfoCard>
         </div>
       )}
 
@@ -538,17 +575,17 @@ export function Calendar() {
       {viewMode === 'month' ? (
         <>
           {!showArchived && (
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300 rounded-md sm:rounded-lg p-2 sm:p-4 mb-2 sm:mb-4">
-              <div className="flex items-start space-x-1 sm:space-x-2">
-                <CheckCircle className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <div className="text-[10px] leading-tight sm:text-sm text-green-900">
-                  <p className="font-semibold mb-0.5">Bloqueio Inteligente</p>
-                  <p className="text-green-800">
-                    Só <strong>confirmadas</strong> bloqueiam horários.
+            <InfoCard variant="subtle" dismissible={true} storageKey="calendar-month-blocking-info-seen" className="p-2 sm:p-3 mb-2 sm:mb-4">
+              <div className="flex items-start space-x-1 sm:space-x-2 pr-6">
+                <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <div className="text-[10px] leading-tight sm:text-xs text-gray-700">
+                  <p className="font-semibold mb-0.5 text-gray-800">Bloqueio Inteligente</p>
+                  <p>
+                    Apenas reservas <strong className="text-gray-800">confirmadas</strong> bloqueiam horários.
                   </p>
                 </div>
               </div>
-            </div>
+            </InfoCard>
           )}
           {loading ? (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12">
@@ -688,15 +725,20 @@ export function Calendar() {
                           const isArchived = ['concluído', 'cancelado'].includes(booking.status);
                           const isConfirmed = booking.status === 'confirmado';
                           const isPending = booking.status === 'pendente';
+                          const isBlock = booking.booking_type === 'bloqueio';
                           const clientName = booking.client?.full_name || 'Cliente Removido';
                           const hasClientData = booking.client !== null;
+                          const blockColors = isBlock ? getBlockColorClasses(booking.block_reason) : null;
+                          const BlockIconComponent = isBlock ? getBlockIcon(booking.block_reason) : null;
 
                           return (
                           <div
                             key={booking.id}
                             onClick={() => handleBookingClick(booking)}
                             className={`flex items-center justify-between py-2 sm:py-2.5 px-2 sm:px-3 rounded-lg shadow-sm hover:shadow-md cursor-pointer border transition-all duration-300 ease-in-out relative ${
-                              isArchived
+                              isBlock
+                                ? `${blockColors?.border} bg-gradient-to-r ${blockColors?.gradient}`
+                                : isArchived
                                 ? 'booking-archived border-gray-300 bg-gray-50'
                                 : isConfirmed
                                 ? 'booking-active border-blue-300 bg-blue-50/50 ring-2 ring-blue-200'
@@ -705,14 +747,21 @@ export function Calendar() {
                                 : 'booking-active border-gray-100 bg-white'
                             }`}
                           >
-                            {isConfirmed && (
+                            {isBlock && (
+                              <div className={`absolute -left-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${blockColors?.text.replace('text-', 'bg-')}`} title={`Bloqueio: ${booking.block_reason || 'Indisponível'}`}></div>
+                            )}
+                            {!isBlock && isConfirmed && (
                               <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-red-500 rounded-full animate-pulse" title="Horário bloqueado para outros clientes"></div>
                             )}
-                            {isPending && (
+                            {!isBlock && isPending && (
                               <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-yellow-500 rounded-full" title="Aguarda confirmação - Horário ainda disponível"></div>
                             )}
                             <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
-                              {booking.client?.avatar_url ? (
+                              {isBlock && BlockIconComponent ? (
+                                <div className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full flex items-center justify-center flex-shrink-0 ${blockColors?.bg}`}>
+                                  <BlockIconComponent className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${blockColors?.text}`} />
+                                </div>
+                              ) : booking.client?.avatar_url ? (
                                 <img
                                   src={booking.client.avatar_url}
                                   alt={clientName}
@@ -726,26 +775,28 @@ export function Calendar() {
                                 </div>
                               )}
                               <div className="min-w-0 flex-1">
-                                <h3 className="font-medium text-gray-900 text-xs sm:text-sm truncate">
-                                  {booking.service.title}
+                                <h3 className={`font-medium text-xs sm:text-sm truncate ${isBlock ? blockColors?.text : 'text-gray-900'}`}>
+                                  {isBlock ? (booking.block_reason || 'Bloqueio') : booking.service.title}
                                 </h3>
-                                <p className={`text-xs ${hasClientData ? 'text-gray-500' : 'text-gray-400 italic'} truncate`}>
-                                  {clientName}
+                                <p className={`text-xs ${isBlock ? `${blockColors?.text} font-medium` : hasClientData ? 'text-gray-500' : 'text-gray-400 italic'} truncate`}>
+                                  {isBlock ? `${format(parseISO(booking.start_time), 'HH:mm')} - ${format(parseISO(booking.end_time), 'HH:mm')}` : clientName}
                                 </p>
                               </div>
                             </div>
                             <div className="flex items-center space-x-1.5 sm:space-x-3 flex-shrink-0">
-                              <span className={`px-1.5 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${getStatusColor(booking.status)}`}>
-                                {booking.status}
+                              <span className={`px-1.5 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${isBlock ? blockColors?.badge : getStatusColor(booking.status)}`}>
+                                {isBlock ? 'bloqueio' : booking.status}
                               </span>
-                              <div className="text-right">
-                                <p className="text-xs sm:text-sm font-semibold text-blue-600">
-                                  {formatCurrency(booking.service.price)}
-                                </p>
-                                <p className="text-[10px] sm:text-xs text-gray-500">
-                                  {booking.service.duration}
-                                </p>
-                              </div>
+                              {!isBlock && (
+                                <div className="text-right">
+                                  <p className="text-xs sm:text-sm font-semibold text-blue-600">
+                                    {formatCurrency(booking.service.price)}
+                                  </p>
+                                  <p className="text-[10px] sm:text-xs text-gray-500">
+                                    {booking.service.duration}
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           </div>
                         );

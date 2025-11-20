@@ -27,6 +27,7 @@ import { Availability } from './pages/professional/Availability';
 import { BlockedDates } from './pages/professional/BlockedDates';
 import { BlockedTimeSlots } from './pages/professional/BlockedTimeSlots';
 import { InternalBookingForm } from './pages/professional/InternalBookingForm';
+import { BlockManagement } from './pages/professional/BlockManagement';
 import { SuperAdminDashboard } from './pages/admin/SuperAdminDashboard';
 import { SuperAdminEmails } from './pages/admin/SuperAdminEmails';
 import { Reviews } from './pages/Reviews';
@@ -293,6 +294,16 @@ function App() {
             <AuthGuard allowedRoles={['professional']}>
               <Layout>
                 <BlockedTimeSlots />
+              </Layout>
+            </AuthGuard>
+          }
+        />
+        <Route
+          path="/professional/blocks"
+          element={
+            <AuthGuard allowedRoles={['professional']}>
+              <Layout>
+                <BlockManagement />
               </Layout>
             </AuthGuard>
           }

@@ -311,3 +311,153 @@ export async function calculateDayCapacity(
     };
   }
 }
+
+export async function checkPublicSlotAvailability(
+  serviceId: string,
+  date: string,
+  startTime: string,
+  endTime: string
+): Promise<SlotAvailability> {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_public_service_time_slot_availability', {
+        p_service_id: serviceId,
+        p_date: date,
+        p_start_time: startTime,
+        p_end_time: endTime
+      });
+
+    if (error) {
+      console.error('Error checking public slot availability:', error);
+      return {
+        totalCapacity: 1,
+        occupiedCount: 0,
+        availableCount: 1,
+        isAvailable: true,
+        utilizationPercentage: 0
+      };
+    }
+
+    if (!data || data.length === 0) {
+      return {
+        totalCapacity: 1,
+        occupiedCount: 0,
+        availableCount: 1,
+        isAvailable: true,
+        utilizationPercentage: 0
+      };
+    }
+
+    const result = data[0];
+
+    return {
+      totalCapacity: result.total_capacity || 1,
+      occupiedCount: result.occupied_count || 0,
+      availableCount: result.available_capacity || 0,
+      isAvailable: result.is_available || false,
+      utilizationPercentage: result.utilization_percentage || 0
+    };
+  } catch (err) {
+    console.error('Error in checkPublicSlotAvailability:', err);
+    return {
+      totalCapacity: 1,
+      occupiedCount: 0,
+      availableCount: 1,
+      isAvailable: true,
+      utilizationPercentage: 0
+    };
+  }
+}
+
+export async function getPublicDailyCapacity(
+  serviceId: string,
+  date: string
+): Promise<{
+  totalSlots: number;
+  availableSlots: number;
+  occupiedSlots: number;
+  utilizationPercentage: number;
+}> {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_public_service_daily_capacity', {
+        p_service_id: serviceId,
+        p_date: date
+      });
+
+    if (error) {
+      console.error('Error fetching public daily capacity:', error);
+      return {
+        totalSlots: 0,
+        availableSlots: 0,
+        occupiedSlots: 0,
+        utilizationPercentage: 0
+      };
+    }
+
+    if (!data || data.length === 0) {
+      return {
+        totalSlots: 0,
+        availableSlots: 0,
+        occupiedSlots: 0,
+        utilizationPercentage: 0
+      };
+    }
+
+    const result = data[0];
+
+    return {
+      totalSlots: result.total_slots || 0,
+      availableSlots: result.available_slots || 0,
+      occupiedSlots: result.occupied_slots || 0,
+      utilizationPercentage: result.utilization_percentage || 0
+    };
+  } catch (err) {
+    console.error('Error in getPublicDailyCapacity:', err);
+    return {
+      totalSlots: 0,
+      availableSlots: 0,
+      occupiedSlots: 0,
+      utilizationPercentage: 0
+    };
+  }
+}
+
+export async function getPublicServiceCapacity(serviceId: string): Promise<ServiceCapacity | null> {
+  try {
+    const { data, error } = await supabase
+      .from('services')
+      .select(`
+        id,
+        title,
+        team,
+        professional:profiles!services_professional_id_fkey(
+          full_name
+        )
+      `)
+      .eq('id', serviceId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching public service capacity:', error);
+      return null;
+    }
+
+    if (!data) return null;
+
+    const totalCapacity = data.team && Array.isArray(data.team) && data.team.length > 0
+      ? data.team.length
+      : 1;
+
+    return {
+      serviceId: data.id,
+      totalCapacity,
+      serviceName: data.title,
+      professionalName: data.professional?.full_name || 'Profissional',
+      team: data.team || []
+    };
+  } catch (err) {
+    console.error('Error in getPublicServiceCapacity:', err);
+    return null;
+  }
+}

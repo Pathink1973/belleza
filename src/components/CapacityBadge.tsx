@@ -1,4 +1,4 @@
-import { Users, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
+import { Users, AlertTriangle, CheckCircle2, XCircle, Lock, AlertCircle } from 'lucide-react';
 
 interface CapacityBadgeProps {
   availableCount: number;
@@ -28,6 +28,24 @@ export function CapacityBadge({
         text: 'text-red-700',
         ring: 'ring-red-300',
         icon: 'text-red-600'
+      };
+    }
+
+    if (availabilityPercentage < 50) {
+      return {
+        bg: 'bg-orange-100',
+        text: 'text-orange-700',
+        ring: 'ring-orange-300',
+        icon: 'text-orange-600'
+      };
+    }
+
+    if (availabilityPercentage < 75) {
+      return {
+        bg: 'bg-yellow-100',
+        text: 'text-yellow-700',
+        ring: 'ring-yellow-300',
+        icon: 'text-yellow-600'
       };
     }
 
@@ -67,14 +85,18 @@ export function CapacityBadge({
 
   const getIcon = () => {
     if (availableCount === 0) {
-      return <XCircle className={sizes.icon} />;
+      return <Lock className={sizes.icon} />;
     }
 
-    if (availabilityPercentage <= 50) {
+    if (availabilityPercentage < 50) {
+      return <AlertCircle className={sizes.icon} />;
+    }
+
+    if (availabilityPercentage < 75) {
       return <AlertTriangle className={sizes.icon} />;
     }
 
-    return <CheckCircle2 className={sizes.icon} />;
+    return <Users className={sizes.icon} />;
   };
 
   const getLabel = () => {
@@ -87,13 +109,16 @@ export function CapacityBadge({
 
     if (showLabel) {
       if (availableCount === totalCapacity) {
-        return 'Todos livres';
+        return 'Muitas vagas';
       }
       if (availableCount === 1) {
         return 'Última vaga';
       }
-      if (availabilityPercentage <= 50) {
+      if (availabilityPercentage < 50) {
         return 'Poucas vagas';
+      }
+      if (availabilityPercentage < 75) {
+        return 'Vagas limitadas';
       }
       return 'Disponível';
     }

@@ -78,7 +78,7 @@ export function Layout({ children }: LayoutProps) {
                 <img
                   src="/icons/belleza-logo.svg"
                   alt="Belleza"
-                  className="h-7 sm:h-9 md:h-11 w-auto"
+                  className="h-6 sm:h-9 w-auto"
                 />
               </Link>
 
@@ -250,6 +250,18 @@ export function Layout({ children }: LayoutProps) {
                             >
                               <Clock className="h-4 w-4 mr-3 text-red-600" />
                               <span>Bloqueio de Horários</span>
+                            </Link>
+                            <Link
+                              to="/professional/blocks"
+                              className={`flex items-center px-4 py-2.5 text-sm transition-colors ${
+                                isActiveRoute('/professional/blocks')
+                                  ? 'text-blue-600 bg-blue-50'
+                                  : 'text-slate-700 hover:bg-slate-50'
+                              }`}
+                              onClick={() => setShowManagementMenu(false)}
+                            >
+                              <Clock className="h-4 w-4 mr-3 text-amber-600" />
+                              <span>Gestão de Bloqueios</span>
                             </Link>
                             <Link
                               to="/professional/reviews"
@@ -503,6 +515,14 @@ export function Layout({ children }: LayoutProps) {
                   >
                     <Clock className="h-6 w-6 mr-3 flex-shrink-0 text-red-600" />
                     <span>Bloqueio de Horários</span>
+                  </Link>
+                  <Link
+                    to="/professional/blocks"
+                    className={mobileMenuLinkClass(isActiveRoute('/professional/blocks'))}
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    <Clock className="h-6 w-6 mr-3 flex-shrink-0 text-amber-600" />
+                    <span>Gestão de Bloqueios</span>
                   </Link>
                   <Link
                     to="/professional/reviews"

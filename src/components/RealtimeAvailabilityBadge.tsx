@@ -24,6 +24,15 @@ export function RealtimeAvailabilityBadge({
 
   const [pulseAnimation, setPulseAnimation] = useState(false);
 
+  // DEBUG: Ver dados recebidos
+  console.log('[RealtimeAvailabilityBadge] DEBUG:', {
+    serviceId,
+    date,
+    dailyStats,
+    loading,
+    matrixLength: dailyMatrix.length
+  });
+
   useEffect(() => {
     if (lastUpdate) {
       setPulseAnimation(true);
@@ -42,23 +51,67 @@ export function RealtimeAvailabilityBadge({
   }
 
   const getColorClasses = () => {
-    const hasAnyAvailability = dailyMatrix.some(slot => slot.available_count > 0);
+    // CRITICAL FIX: Granular color display based on availability percentage
+    // Not binary green/red - show exact capacity state with color coding
 
-    if (!hasAnyAvailability) {
+    const availablePercentage = dailyStats.totalSlots > 0
+      ? (dailyStats.availableSlots / dailyStats.totalSlots) * 100
+      : 0;
+
+    console.log('[BADGE] Checking availability (GRANULAR):', {
+      availableSlots: dailyStats.availableSlots,
+      totalSlots: dailyStats.totalSlots,
+      occupiedSlots: dailyStats.occupiedSlots,
+      availablePercentage: Math.round(availablePercentage),
+      colorBand: availablePercentage === 0 ? 'red (esgotado)' :
+                 availablePercentage < 20 ? 'red/orange (quase esgotado)' :
+                 availablePercentage < 50 ? 'orange (parcial)' :
+                 availablePercentage < 80 ? 'yellow (bom)' : 'green (disponível)'
+    });
+
+    // Color bands based on percentage AVAILABLE (not occupied)
+    // 0% available = RED (Esgotado)
+    // 1-19% available = RED/ORANGE (Quase esgotado)
+    // 20-49% available = ORANGE (Parcialmente ocupado)
+    // 50-79% available = YELLOW (Boa disponibilidade)
+    // 80-100% available = GREEN (Muito disponível)
+
+    if (dailyStats.availableSlots === 0) {
       return {
         bg: 'bg-red-100',
         text: 'text-red-700',
         ring: 'ring-red-300',
         icon: 'text-red-600'
       };
+    } else if (availablePercentage < 20) {
+      return {
+        bg: 'bg-orange-100',
+        text: 'text-orange-700',
+        ring: 'ring-orange-300',
+        icon: 'text-orange-600'
+      };
+    } else if (availablePercentage < 50) {
+      return {
+        bg: 'bg-amber-100',
+        text: 'text-amber-700',
+        ring: 'ring-amber-300',
+        icon: 'text-amber-600'
+      };
+    } else if (availablePercentage < 80) {
+      return {
+        bg: 'bg-yellow-100',
+        text: 'text-yellow-700',
+        ring: 'ring-yellow-300',
+        icon: 'text-yellow-600'
+      };
+    } else {
+      return {
+        bg: 'bg-green-100',
+        text: 'text-green-700',
+        ring: 'ring-green-300',
+        icon: 'text-green-600'
+      };
     }
-
-    return {
-      bg: 'bg-green-100',
-      text: 'text-green-700',
-      ring: 'ring-green-300',
-      icon: 'text-green-600'
-    };
   };
 
   const colors = getColorClasses();
@@ -108,7 +161,7 @@ export function RealtimeAvailabilityBadge({
             {dailyStats.availableSlots}
           </div>
           <div className="text-xs text-gray-500">
-            de {dailyStats.totalSlots} totais
+            de {dailyStats.totalSlots} {dailyStats.totalSlots === 1 ? 'vaga total' : 'vagas totais'}
           </div>
         </div>
 
@@ -137,7 +190,10 @@ export function RealtimeAvailabilityBadge({
             <div className="flex items-center space-x-1">
               <div className={`w-2 h-2 rounded-full ${dailyStats.availableSlots > 0 ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
               <span className={colors.text}>
-                {dailyStats.availableSlots > 0 ? `${dailyStats.availableSlots} vaga${dailyStats.availableSlots !== 1 ? 's' : ''}` : 'Esgotado'}
+                {dailyStats.availableSlots > 0
+                  ? `${dailyStats.availableSlots} ${dailyStats.availableSlots === 1 ? 'vaga' : 'vagas'}`
+                  : `Esgotado (0/${dailyStats.totalSlots})`
+                }
               </span>
             </div>
           </div>

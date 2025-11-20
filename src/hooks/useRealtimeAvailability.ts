@@ -16,6 +16,7 @@ interface DailyAvailabilitySlot {
   total_capacity: number;
   is_available: boolean;
   utilization_percentage: number;
+  block_reason?: string | null;
 }
 
 interface UseRealtimeAvailabilityOptions {
@@ -104,7 +105,12 @@ export function useRealtimeAvailability({
         throw error;
       }
 
-      console.log('[REALTIME_AVAILABILITY] Matrix data received:', data);
+      console.log('[REALTIME_AVAILABILITY] Matrix data received:', {
+        totalSlots: data?.length,
+        firstSlot: data?.[0],
+        lastSlot: data?.[data.length - 1],
+        rawData: data
+      });
 
       if (data && Array.isArray(data) && data.length > 0) {
         // Normalizar dados da matriz
@@ -113,7 +119,8 @@ export function useRealtimeAvailability({
           available_count: slot.available_count ?? slot.available ?? 0,
           total_capacity: slot.total_capacity ?? slot.total ?? 0,
           is_available: (slot.available_count ?? slot.available ?? 0) > 0,
-          utilization_percentage: slot.utilization_percentage ?? 0
+          utilization_percentage: slot.utilization_percentage ?? 0,
+          block_reason: slot.block_reason || null
         }));
 
         setDailyMatrix(normalizedData);
@@ -210,38 +217,56 @@ export function useRealtimeAvailability({
       channelRef.current.unsubscribe();
     }
 
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'bookings',
-          filter: `service_id=eq.${serviceId}`
-        },
-        (payload) => {
-          console.log('[REALTIME_AVAILABILITY] Booking changed, refreshing...', payload);
-          fetchDailyMatrix();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'blocked_dates'
-        },
-        (payload) => {
-          console.log('[REALTIME_AVAILABILITY] Blocked dates changed, refreshing...', payload);
-          fetchDailyMatrix();
-        }
-      )
-      .subscribe();
+    // IMPORTANT: Try to setup realtime, but gracefully handle failures for anonymous users
+    try {
+      const channel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'bookings',
+            filter: `service_id=eq.${serviceId}`
+          },
+          (payload) => {
+            console.log('[REALTIME_AVAILABILITY] Booking changed, refreshing...', payload);
+            fetchDailyMatrix();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'blocked_dates'
+          },
+          (payload) => {
+            console.log('[REALTIME_AVAILABILITY] Blocked dates changed, refreshing...', payload);
+            fetchDailyMatrix();
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('[REALTIME_AVAILABILITY] Realtime subscription active');
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.warn('[REALTIME_AVAILABILITY] Realtime subscription failed, falling back to polling', status);
+            // If realtime fails, ensure polling is active as fallback
+            if (!refreshTimerRef.current && autoRefresh) {
+              refreshTimerRef.current = setInterval(() => {
+                console.log('[REALTIME_AVAILABILITY] Polling fallback refresh');
+                fetchDailyMatrix();
+              }, refreshInterval || 30000);
+            }
+          }
+        });
 
-    channelRef.current = channel;
+      channelRef.current = channel;
+    } catch (err) {
+      console.warn('[REALTIME_AVAILABILITY] Failed to setup realtime, using polling only', err);
+    }
 
-    // Auto-refresh timer
+    // Auto-refresh timer (works for both authenticated and anonymous users)
     if (autoRefresh && refreshInterval > 0) {
       refreshTimerRef.current = setInterval(() => {
         console.log('[REALTIME_AVAILABILITY] Auto-refresh triggered');
@@ -252,7 +277,11 @@ export function useRealtimeAvailability({
     // Cleanup
     return () => {
       if (channelRef.current) {
-        channelRef.current.unsubscribe();
+        try {
+          channelRef.current.unsubscribe();
+        } catch (err) {
+          console.warn('[REALTIME_AVAILABILITY] Error unsubscribing from channel', err);
+        }
         channelRef.current = null;
       }
       if (refreshTimerRef.current) {
@@ -281,31 +310,53 @@ export function useRealtimeAvailability({
       };
     }
 
-    // SOMA TOTAL DE VAGAS DISPONÍVEIS (não slots de tempo, mas profissionais × slots)
-    const availableSum = dailyMatrix.reduce((sum, s) => sum + s.available_count, 0);
+    // CRITICAL FIX: Correct calculation using database-provided values
+    // The matrix now returns correct values from get_service_team_availability_matrix
+    // Each slot has: total_capacity (team size), available_count, occupied_count
 
-    // SOMA TOTAL DE CAPACIDADE (todos os profissionais × todos os slots)
-    const totalCapacitySum = dailyMatrix.reduce((sum, s) => sum + s.total_capacity, 0);
+    // Sum available slots across all time periods
+    const availableSum = dailyMatrix.reduce((sum, s) => sum + (s.available_count || 0), 0);
 
-    // VAGAS OCUPADAS = diferença entre capacidade total e vagas disponíveis
-    const occupiedSum = totalCapacitySum - availableSum;
+    // Sum total capacity across all time periods (team_size × number_of_slots)
+    const totalCapacitySum = dailyMatrix.reduce((sum, s) => sum + (s.total_capacity || 0), 0);
 
-    // Capacidade média por slot (quantos profissionais em média)
-    const avgCapacity = dailyMatrix.length > 0 ? totalCapacitySum / dailyMatrix.length : 0;
+    // Sum occupied slots (confirmed bookings)
+    const occupiedSum = dailyMatrix.reduce((sum, s) => sum + ((s.total_capacity || 0) - (s.available_count || 0)), 0);
 
-    // Percentagem de ocupação baseada em VAGAS (não em slots de tempo)
+    // Team size (should be same for all slots)
+    const teamSize = dailyMatrix.length > 0 ? (dailyMatrix[0].total_capacity || 1) : 1;
+
+    // Percentage of occupation based on SLOTS (not time periods)
+    // Example: 2 confirmed / 22 total = 9.09% occupied
     const averageOccupancy = totalCapacitySum > 0 ? ((occupiedSum / totalCapacitySum) * 100) : 0;
 
-    const roundedCapacity = Math.round(avgCapacity);
-
-    return {
-      totalSlots: totalCapacitySum,  // TOTAL DE VAGAS POSSÍVEIS (profissionais × slots)
-      availableSlots: availableSum,  // TOTAL DE VAGAS DISPONÍVEIS
-      occupiedSlots: occupiedSum,  // TOTAL DE VAGAS OCUPADAS (reservas confirmadas)
+    const stats = {
+      totalSlots: totalCapacitySum,      // TOTAL CAPACITY: team_size × time_slots (e.g., 2 × 21 = 42)
+      availableSlots: availableSum,      // AVAILABLE: sum of all available_count from matrix
+      occupiedSlots: occupiedSum,        // OCCUPIED: total - available (confirmed bookings)
       averageOccupancy: Math.round(averageOccupancy * 100) / 100,
-      totalCapacity: roundedCapacity,  // CAPACIDADE MÉDIA POR SLOT
-      currentAvailable: availableSum  // TOTAL DE VAGAS DISPONÍVEIS (mesma informação)
+      totalCapacity: teamSize,           // Team size (professionals per slot)
+      currentAvailable: availableSum     // Same as availableSlots
     };
+
+    console.log('[REALTIME_AVAILABILITY] Daily stats calculated (FIXED):', {
+      matrixLength: dailyMatrix.length,
+      teamSize,
+      firstSlot: dailyMatrix[0],
+      lastSlot: dailyMatrix[dailyMatrix.length - 1],
+      availableSum,
+      totalCapacitySum,
+      occupiedSum,
+      stats,
+      formula: `${teamSize} professionals × ${dailyMatrix.length} time slots = ${totalCapacitySum} total capacity`,
+      detailedCalc: {
+        availableFormula: `sum of all available_count = ${availableSum}`,
+        totalFormula: `sum of all total_capacity = ${totalCapacitySum}`,
+        occupiedFormula: `totalCapacity - available = ${totalCapacitySum} - ${availableSum} = ${occupiedSum}`
+      }
+    });
+
+    return stats;
   }, [dailyMatrix]);
 
   return {

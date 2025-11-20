@@ -54,12 +54,11 @@ export function useServiceCapacity(serviceId: string | null, date: Date) {
         throw new Error(`Invalid UUID format for service_id: ${serviceId}`);
       }
 
+      // Use the FIXED get_service_team_availability_matrix which now calculates correctly
       const { data, error } = await supabase
-        .rpc('get_unified_slot_availability', {
+        .rpc('get_service_team_availability_matrix', {
           p_service_id: serviceId,
-          p_date: dateStr,
-          p_start_time: startTime,
-          p_end_time: endTime
+          p_date: dateStr
         });
 
       if (error) {
@@ -67,19 +66,32 @@ export function useServiceCapacity(serviceId: string | null, date: Date) {
         throw error;
       }
 
-      if (data && data.length > 0) {
-        const slot = data[0];
-        return {
-          time: timeOnly,
-          isAvailable: slot.is_available,
-          totalCapacity: slot.total_capacity,
-          occupiedCount: slot.occupied_count,
-          availableCount: slot.available_count,
-          blockedReason: slot.blocked_reason,
-          blockingFactor: slot.blocking_factor,
-          availableProfessionals: slot.available_professionals || [],
-          occupiedProfessionals: slot.occupied_professionals || []
-        };
+      // Find the specific time slot from the matrix
+      if (data && Array.isArray(data) && data.length > 0) {
+        const slot = data.find((s: any) => s.time_slot?.startsWith(timeOnly));
+
+        if (slot) {
+          // Fetch professional details for this slot
+          const { data: profData } = await supabase
+            .rpc('get_available_professionals_for_slot', {
+              p_service_id: serviceId,
+              p_date: dateStr,
+              p_start_time: startTime,
+              p_end_time: endTime
+            });
+
+          return {
+            time: timeOnly,
+            isAvailable: slot.is_available,
+            totalCapacity: slot.total_capacity,
+            occupiedCount: slot.occupied_count,
+            availableCount: slot.available_count,
+            blockedReason: slot.available_count === 0 ? `Esgotado (0/${slot.total_capacity})` : undefined,
+            blockingFactor: undefined,
+            availableProfessionals: profData || [],
+            occupiedProfessionals: []
+          };
+        }
       }
 
       return null;
@@ -105,6 +117,7 @@ export function useServiceCapacity(serviceId: string | null, date: Date) {
         throw new Error(`Invalid UUID format for service_id: ${serviceId}`);
       }
 
+      // Use the FIXED database function that calculates correctly
       const { data, error } = await supabase
         .rpc('get_service_daily_capacity_summary', {
           p_service_id: serviceId,
@@ -119,12 +132,20 @@ export function useServiceCapacity(serviceId: string | null, date: Date) {
       if (data && data.length > 0) {
         const summary = data[0];
         setDailySummary({
-          totalCapacity: summary.total_capacity,
-          totalSlots: summary.total_slots,
-          availableSlots: summary.available_slots,
-          occupiedSlots: summary.occupied_slots,
-          fullyBookedSlots: summary.fully_booked_slots,
+          totalCapacity: summary.total_capacity,        // Team size (professionals per slot)
+          totalSlots: summary.total_slots,              // CORRECTED: team_size × time_slots
+          availableSlots: summary.available_slots,      // CORRECTED: total_slots - confirmed
+          occupiedSlots: summary.occupied_slots,        // Confirmed bookings count
+          fullyBookedSlots: summary.fully_booked_slots, // Time slots where all professionals busy
           occupationPercentage: parseFloat(summary.occupation_percentage)
+        });
+
+        console.log('[useServiceCapacity] Daily summary loaded (FIXED):', {
+          teamSize: summary.total_capacity,
+          totalSlots: summary.total_slots,
+          available: summary.available_slots,
+          occupied: summary.occupied_slots,
+          formula: `${summary.total_capacity} professionals × 21 time slots = ${summary.total_slots} total capacity`
         });
       }
     } catch (err: any) {
