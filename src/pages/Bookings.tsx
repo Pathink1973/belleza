@@ -18,6 +18,7 @@ interface Booking {
   end_time: string;
   status: 'pendente' | 'confirmado' | 'concluído' | 'cancelado';
   professional_id: string;
+  team_member_id?: string | null;
   is_archived?: boolean;
   cancellation_reason?: string;
   service: {
@@ -34,6 +35,9 @@ interface Booking {
   } | null;
   professional: {
     full_name: string;
+  } | null;
+  team_member?: {
+    name: string;
   } | null;
   client: {
     full_name: string;
@@ -148,6 +152,7 @@ export function Bookings() {
               service:services(id, title, price, category),
               service_variant:service_variants(id, name, price, duration),
               professional:profiles!bookings_professional_id_fkey(full_name),
+              team_member:service_team_members!bookings_team_member_id_fkey(name),
               client:profiles!bookings_client_id_fkey(full_name, avatar_url)
             `)
             .eq('professional_id', profile.id)
@@ -161,6 +166,7 @@ export function Bookings() {
               service:services(id, title, price, category),
               service_variant:service_variants(id, name, price, duration),
               professional:profiles!bookings_professional_id_fkey(full_name),
+              team_member:service_team_members!bookings_team_member_id_fkey(name),
               client:profiles!bookings_client_id_fkey(full_name, avatar_url)
             `)
             .eq('client_id', profile.id)

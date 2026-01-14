@@ -163,24 +163,13 @@ export async function getServiceCurrentAvailability(
 
     const confirmedBookings = bookings || [];
 
-    // Count unique time slots that are occupied
-    // A time slot is considered occupied if ANY professional is booked during that time
-    const occupiedSlots = new Set<string>();
+    const currentBookings = confirmedBookings.length;
 
-    confirmedBookings.forEach(booking => {
-      const slotKey = format(new Date(booking.start_time), 'HH:mm');
-      occupiedSlots.add(slotKey);
-    });
+    const estimatedDailySlots = 22;
 
-    const currentBookings = occupiedSlots.size;
-
-    // Estimate total slots available in a day (assuming 9-20h with 30min intervals)
-    const estimatedDailySlots = 22; // (20-9)*2 = 22 slots
-
-    // Calculate available slots considering capacity
     const maxDailyCapacity = estimatedDailySlots * totalCapacity;
     const totalOccupiedCapacity = currentBookings;
-    const availableSlots = maxDailyCapacity - totalOccupiedCapacity;
+    const availableSlots = Math.max(0, maxDailyCapacity - totalOccupiedCapacity);
 
     // Calculate utilization percentage
     const utilizationPercentage = Math.round((totalOccupiedCapacity / maxDailyCapacity) * 100);

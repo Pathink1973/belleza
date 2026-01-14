@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, AlertTriangle } from 'lucide-react';
+import { X, AlertTriangle, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
 import { ptLocale } from '../i18n';
@@ -10,6 +10,7 @@ interface Booking {
   end_time: string;
   status: 'pendente' | 'confirmado' | 'concluído' | 'cancelado';
   professional_id: string;
+  team_member_id?: string | null;
   service: {
     id: string;
     title: string;
@@ -19,6 +20,9 @@ interface Booking {
   professional: {
     full_name: string;
   };
+  team_member?: {
+    name: string;
+  } | null;
 }
 
 interface BookingCancelModalProps {
@@ -95,9 +99,15 @@ export function BookingCancelModal({ booking, onClose, onSuccess }: BookingCance
 
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
             <h3 className="font-semibold text-gray-900 mb-2">{booking.service.title}</h3>
-            <p className="text-gray-600 text-sm mb-1">Profissional: {booking.professional.full_name}</p>
+            <div className="flex items-center text-gray-600 text-sm mb-1">
+              <User className="h-4 w-4 mr-2" />
+              <span>
+                {booking.team_member?.name || booking.professional?.full_name || 'Profissional'}
+                {booking.team_member_id && <span className="text-blue-600 text-xs ml-1">(colaborador)</span>}
+              </span>
+            </div>
             <p className="text-gray-600 text-sm">
-              Data: {format(new Date(booking.start_time), 'PPP')} às {format(new Date(booking.start_time), 'p')}
+              Data: {format(new Date(booking.start_time), 'PPP', { locale: ptLocale })} às {format(new Date(booking.start_time), 'p', { locale: ptLocale })}
             </p>
           </div>
 

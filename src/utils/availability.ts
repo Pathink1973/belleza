@@ -235,20 +235,6 @@ export function getCapacityColorClasses(utilizationPercentage: number): {
   return colorMap[color];
 }
 
-export function getCapacityIcon(utilizationPercentage: number): string {
-  if (utilizationPercentage === 0) {
-    return '✓✓✓';
-  } else if (utilizationPercentage < 50) {
-    return '✓✓';
-  } else if (utilizationPercentage < 80) {
-    return '✓';
-  } else if (utilizationPercentage < 100) {
-    return '⚠';
-  } else {
-    return '✗';
-  }
-}
-
 export function getCapacityLabel(availableCount: number, totalCapacity: number): string {
   if (availableCount === 0) {
     return 'Esgotado';

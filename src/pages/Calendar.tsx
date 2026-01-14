@@ -27,7 +27,8 @@ import {
   UtensilsCrossed,
   Coffee,
   Users as UsersIcon,
-  Ban
+  Ban,
+  Lock
 } from 'lucide-react';
 import { InfoCard } from '../components/InfoCard';
 import { formatCurrency } from '../utils/currency';
@@ -47,11 +48,15 @@ interface Booking {
   status: 'pendente' | 'confirmado' | 'concluído' | 'cancelado';
   booking_type?: 'reserva' | 'bloqueio';
   block_reason?: string;
+  team_member_id?: string | null;
   service: {
     title: string;
     price: number;
     duration: string;
   };
+  team_member?: {
+    name: string;
+  } | null;
   client: {
     full_name: string;
     avatar_url: string | null;
@@ -148,7 +153,9 @@ export function Calendar() {
           *,
           booking_type,
           block_reason,
-          service:services(title, price, duration),
+          service:services(title, price, duration, team),
+          team_member:service_team_members!bookings_team_member_id_fkey(name),
+          professional:profiles!bookings_professional_id_fkey(full_name),
           client:profiles!bookings_client_id_fkey(
             full_name,
             avatar_url,
@@ -228,7 +235,9 @@ export function Calendar() {
           *,
           booking_type,
           block_reason,
-          service:services(title, price, duration),
+          service:services(title, price, duration, team),
+          team_member:service_team_members!bookings_team_member_id_fkey(name),
+          professional:profiles!bookings_professional_id_fkey(full_name),
           client:profiles!bookings_client_id_fkey(
             full_name,
             avatar_url,
@@ -714,7 +723,7 @@ export function Calendar() {
                       isSlotBlocked ? 'font-bold' : ''
                     }`}>{slot.time}</span>
                     {isSlotBlocked && (
-                      <span className="ml-0.5 sm:ml-1 text-[9px] sm:text-[10px] text-red-600 font-bold">🔒</span>
+                      <Lock className="ml-0.5 sm:ml-1 w-3 h-3 text-red-600" />
                     )}
                   </div>
 
@@ -906,6 +915,35 @@ export function Calendar() {
                   )}
                 </div>
               </div>
+
+              {(() => {
+                const professionalName = selectedBooking.team_member?.name
+                  || selectedBooking.service?.team?.find((m: any) => m.is_primary)?.name
+                  || selectedBooking.professional?.full_name;
+
+                return professionalName ? (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                          <User className="h-5 w-5 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-green-600 uppercase tracking-wide">
+                            Profissional Atribuído
+                          </p>
+                          <p className="text-base font-bold text-gray-900">
+                            {professionalName}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                      </div>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
 
               <div className="bg-gray-50 rounded-lg p-4">
                 <h4 className="font-medium text-gray-900 mb-2">

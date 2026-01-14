@@ -216,10 +216,35 @@ export function InternalBookingForm() {
     if (!profile?.id) return;
 
     try {
+      const [bookingsResult, notesResult] = await Promise.all([
+        supabase
+          .from('bookings')
+          .select('client_id')
+          .eq('professional_id', profile.id)
+          .not('client_id', 'is', null),
+        supabase
+          .from('client_notes')
+          .select('client_id')
+          .eq('professional_id', profile.id)
+          .not('client_id', 'is', null)
+      ]);
+
+      if (bookingsResult.error) throw bookingsResult.error;
+      if (notesResult.error) throw notesResult.error;
+
+      const bookingClientIds = bookingsResult.data?.map(b => b.client_id) || [];
+      const notesClientIds = notesResult.data?.map(n => n.client_id) || [];
+      const uniqueClientIds = [...new Set([...bookingClientIds, ...notesClientIds])];
+
+      if (uniqueClientIds.length === 0) {
+        setClients([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, mobile_number')
-        .eq('role', 'client')
+        .in('id', uniqueClientIds)
         .order('full_name');
 
       if (error) throw error;

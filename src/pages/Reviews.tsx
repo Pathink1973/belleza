@@ -3,7 +3,7 @@ import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { format, parseISO } from 'date-fns';
 import { ptLocale } from '../i18n';
-import { Star, MessageSquare, AlertCircle, CheckCircle, User, Calendar, ThumbsUp } from 'lucide-react';
+import { Star, MessageSquare, AlertCircle, CheckCircle, User, Calendar, ThumbsUp, Smile, Meh, Frown } from 'lucide-react';
 
 interface Review {
   id: string;
@@ -387,12 +387,12 @@ export function Reviews() {
                     setNewReview({ ...newReview, rating })
                   )}
                 </div>
-                <p className="text-center text-sm text-gray-500 mt-2">
-                  {newReview.rating === 5 && '⭐ Excelente!'}
-                  {newReview.rating === 4 && '😊 Muito Bom'}
-                  {newReview.rating === 3 && '😐 Bom'}
-                  {newReview.rating === 2 && '😕 Razoável'}
-                  {newReview.rating === 1 && '😞 Precisa Melhorar'}
+                <p className="text-center text-sm text-gray-500 mt-2 flex items-center justify-center gap-1.5">
+                  {newReview.rating === 5 && <><Star className="w-4 h-4" style={{ color: '#F59E0B' }} /> Excelente!</>}
+                  {newReview.rating === 4 && <><Smile className="w-4 h-4" style={{ color: '#22C55E' }} /> Muito Bom</>}
+                  {newReview.rating === 3 && <><Meh className="w-4 h-4" style={{ color: '#3B82F6' }} /> Bom</>}
+                  {newReview.rating === 2 && <><Frown className="w-4 h-4" style={{ color: '#F97316' }} /> Razoavel</>}
+                  {newReview.rating === 1 && <><Frown className="w-4 h-4" style={{ color: '#EF4444' }} /> Precisa Melhorar</>}
                 </p>
               </div>
 

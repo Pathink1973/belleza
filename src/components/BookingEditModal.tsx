@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, X, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, X, AlertCircle, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
 import { ptLocale } from '../i18n';
+import { checkSlotAvailability } from '../utils/availability';
 
 interface Booking {
   id: string;
@@ -10,6 +11,7 @@ interface Booking {
   end_time: string;
   status: 'pendente' | 'confirmado' | 'concluído' | 'cancelado';
   professional_id: string;
+  team_member_id?: string | null;
   service: {
     id: string;
     title: string;
@@ -25,6 +27,9 @@ interface Booking {
   professional: {
     full_name: string;
   };
+  team_member?: {
+    name: string;
+  } | null;
 }
 
 interface BookingEditModalProps {
@@ -137,6 +142,23 @@ export function BookingEditModal({ booking, onClose, onSuccess }: BookingEditMod
       const durationMinutes = durationMatch ? parseInt(durationMatch[1]) : 60;
       const endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60000);
 
+      const endTimeStr = `${endDateTime.getHours().toString().padStart(2, '0')}:${endDateTime.getMinutes().toString().padStart(2, '0')}`;
+
+      if (booking.status === 'confirmado') {
+        const slotAvailability = await checkSlotAvailability(
+          booking.service.id,
+          selectedDate,
+          selectedTime,
+          endTimeStr
+        );
+
+        if (!slotAvailability.isAvailable && slotAvailability.availableCount === 0) {
+          setError('O horário selecionado não tem capacidade disponível. Por favor, escolha outro horário.');
+          setLoading(false);
+          return;
+        }
+      }
+
       const { error: updateError } = await supabase
         .from('bookings')
         .update({
@@ -195,9 +217,16 @@ export function BookingEditModal({ booking, onClose, onSuccess }: BookingEditMod
               <Calendar className="h-4 w-4 mr-2 text-blue-600" />
               <span>{format(new Date(booking.start_time), 'PPP', { locale: ptLocale })}</span>
             </div>
-            <div className="flex items-center text-gray-700">
+            <div className="flex items-center text-gray-700 mb-1">
               <Clock className="h-4 w-4 mr-2 text-blue-600" />
               <span>{format(new Date(booking.start_time), 'p', { locale: ptLocale })} - {format(new Date(booking.end_time), 'p', { locale: ptLocale })}</span>
+            </div>
+            <div className="flex items-center text-gray-700">
+              <User className="h-4 w-4 mr-2 text-blue-600" />
+              <span>
+                {booking.team_member?.name || booking.professional?.full_name || 'Profissional'}
+                {booking.team_member_id && <span className="text-blue-600 text-xs ml-1">(colaborador)</span>}
+              </span>
             </div>
           </div>
 
