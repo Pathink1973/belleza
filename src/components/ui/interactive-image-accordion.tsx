@@ -4,27 +4,27 @@ const accordionItems = [
   {
     id: 1,
     title: 'Barbearia',
-    imageUrl: 'https://res.cloudinary.com/dfeqzodi3/image/upload/v1762640874/barbeiro_card.webp',
+    imageUrl: 'https://ik.imagekit.io/8gvnjnrjr/Belleza%20App/barbeiro_card.webp?updatedAt=1770894619832',
   },
   {
     id: 2,
     title: 'Cabelereira',
-    imageUrl: 'https://res.cloudinary.com/dfeqzodi3/image/upload/v1762640874/cabeleireia_card.webp',
+    imageUrl: 'https://ik.imagekit.io/8gvnjnrjr/Belleza%20App/cabeleireia_card.webp?updatedAt=1770894620802',
   },
   {
     id: 3,
     title: 'Massagens',
-    imageUrl: 'https://res.cloudinary.com/dfeqzodi3/image/upload/v1762640875/massagens_card.webp',
+    imageUrl: 'https://ik.imagekit.io/8gvnjnrjr/Belleza%20App/massagista_capa.webp?updatedAt=1770894621011',
   },
   {
     id: 4,
     title: 'Spa',
-    imageUrl: 'https://res.cloudinary.com/dfeqzodi3/image/upload/v1762640878/spa_card.webp',
+    imageUrl: 'https://ik.imagekit.io/8gvnjnrjr/Belleza%20App/spa_card.webp?updatedAt=1770894620590',
   },
   {
     id: 5,
     title: 'Fitness',
-    imageUrl: 'https://res.cloudinary.com/dfeqzodi3/image/upload/v1762640874/fitness_card.webp',
+    imageUrl: 'https://ik.imagekit.io/8gvnjnrjr/Belleza%20App/fitness_card.webp?updatedAt=1770894621613',
   },
 ];
 
