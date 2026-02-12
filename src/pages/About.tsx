@@ -60,7 +60,7 @@ export function About() {
             </div>
             <div className="rounded-2xl overflow-hidden shadow-2xl">
               <img
-                src="https://res.cloudinary.com/dfeqzodi3/image/upload/v1762642462/foto_profissionais.webp"
+                src="https://ik.imagekit.io/8gvnjnrjr/Belleza%20App/foto_profissionais.webp?updatedAt=1770894622669"
                 alt="Profissional de beleza"
                 className="w-full h-full object-cover"
               />
