@@ -762,9 +762,9 @@ export function LandingPage() {
                 <div className="flex items-center">
                   <img
                     src={
-                      index === 0 ? 'https://res.cloudinary.com/dfeqzodi3/image/upload/v1762501226/cliente1.webp' :
-                      index === 1 ? 'https://res.cloudinary.com/dfeqzodi3/image/upload/v1762501226/cliente3.webp' :
-                      index === 2 ? 'https://res.cloudinary.com/dfeqzodi3/image/upload/v1762501515/cliente4.webp' :
+                      index === 0 ? 'https://ik.imagekit.io/8gvnjnrjr/Belleza%20App/cliente1.webp?updatedAt=1770894622528' :
+                      index === 1 ? 'https://ik.imagekit.io/8gvnjnrjr/Belleza%20App/cliente2_uxys5j.webp?updatedAt=1770894622266' :
+                      index === 2 ? 'https://ik.imagekit.io/8gvnjnrjr/Belleza%20App/cliente3.webp?updatedAt=1770894621101' :
                       testimonial.avatar
                     }
                     alt={testimonial.name}
